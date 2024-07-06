@@ -31,7 +31,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/transaction/cashier/new-transaction', [CashierController::class, 'newTransaction'])->name('transaction.cashier.new-transaction');
     Route::put('/transaction/cashier/hold-transaction/{transaction}', [CashierController::class, 'holdTransaction'])->name('transaction.cashier.hold-transaction');
     Route::post('/transaction/cashier/submit-transaction', [CashierController::class, 'submitTransaction'])->name('transaction.cashier.submit-transaction');
-    Route::get('/transaction/cashier/get-data-transaction', [CashierController::class, 'getDataTransaction'])->name('transaction.cashier.get-data-transactions');
+    Route::get('/transaction/cashier/get-data-transaction/{param}', [CashierController::class, 'getDataTransaction'])->name('transaction.cashier.get-data-transactions');
 
     Route::post('/transaction/cashier/scan-product', [CashierController::class, 'scanProduct'])->name('transaction.cashier.scan-product');
 

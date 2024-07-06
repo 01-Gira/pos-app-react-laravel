@@ -34,11 +34,16 @@ export interface ProductTransactions {
 export interface Transaction {
     id: string;
     products: Product[];
-    total_price?: number;
-    ppn?: number;
-    total_payment?: number;
+    total_price: number;
+    ppn: number;
+    total_payment: number;
 }
 
+export interface HoldTransaction {
+    id: string;
+    status: string;
+    created_at: Date;
+}
 
 export interface Discount {
     id: string;
@@ -64,7 +69,6 @@ export interface Category {
     updated_at: Date;
 }
 
-
 export interface Pagination {
     current_page: number;
     total_pages: number;
@@ -77,12 +81,13 @@ export interface Session {
 }
 
 export interface Flash {
-    type_message : String,
-    message: String
+    type_message: String;
+    message: String;
 }
 
-
-export type PageProps<T extends Record<string, unknown> = Record<string, unknown>> = T & {
+export type PageProps<
+    T extends Record<string, unknown> = Record<string, unknown>
+> = T & {
     title: string;
     auth: {
         user: User;
