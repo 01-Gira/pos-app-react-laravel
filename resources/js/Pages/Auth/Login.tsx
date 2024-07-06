@@ -5,9 +5,11 @@ import InputError from '@/Components/InputError';
 import InputLabel from '@/Components/InputLabel';
 import PrimaryButton from '@/Components/PrimaryButton';
 import TextInput from '@/Components/TextInput';
-import { Head, Link, useForm } from '@inertiajs/react';
+import { Head, Link, router, useForm } from '@inertiajs/react';
+import { Flash } from '@/types';
+import { Alert } from 'flowbite-react';
 
-export default function Login({ status, canResetPassword }: { status?: string, canResetPassword: boolean }) {
+export default function Login({ flash, status, canResetPassword }: { flash: Flash, status?: string, canResetPassword: boolean }) {
     const { data, setData, post, processing, errors, reset } = useForm({
         email: '',
         password: '',
@@ -32,6 +34,11 @@ export default function Login({ status, canResetPassword }: { status?: string, c
 
             {status && <div className="mb-4 font-medium text-sm text-green-600">{status}</div>}
 
+            {flash.message && (
+                <Alert onDismiss={() => router.reload()} className='mb-3' color={flash.type_message === 'success' ? 'green' : 'red'}>
+                    {flash.message}
+                </Alert>
+            )}
             <form onSubmit={submit}>
                 <div>
                     <InputLabel htmlFor="email" value="Email" />

@@ -5,11 +5,15 @@ import InputLabel from '@/Components/InputLabel';
 import PrimaryButton from '@/Components/PrimaryButton';
 import TextInput from '@/Components/TextInput';
 import { Head, Link, useForm } from '@inertiajs/react';
+import { Textarea } from 'flowbite-react';
 
 export default function Register() {
     const { data, setData, post, processing, errors, reset } = useForm({
         name: '',
         email: '',
+        phone_no: '',
+        address: '',
+        store_name: '',
         password: '',
         password_confirmation: '',
     });
@@ -31,23 +35,6 @@ export default function Register() {
             <Head title="Register" />
 
             <form onSubmit={submit}>
-                <div>
-                    <InputLabel htmlFor="name" value="Name" />
-
-                    <TextInput
-                        id="name"
-                        name="name"
-                        value={data.name}
-                        className="mt-1 block w-full"
-                        autoComplete="name"
-                        isFocused={true}
-                        onChange={(e) => setData('name', e.target.value)}
-                        required
-                    />
-
-                    <InputError message={errors.name} className="mt-2" />
-                </div>
-
                 <div className="mt-4">
                     <InputLabel htmlFor="email" value="Email" />
 
@@ -63,6 +50,64 @@ export default function Register() {
                     />
 
                     <InputError message={errors.email} className="mt-2" />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4 mt-5">
+                    <div>
+                        <InputLabel htmlFor="name" value="Name" />
+
+                        <TextInput
+                            id="name"
+                            name="name"
+                            value={data.name}
+                            className="mt-1 block w-full"
+                            autoComplete="name"
+                            isFocused={true}
+                            onChange={(e) => setData('name', e.target.value)}
+                            required
+                        />
+
+                        <InputError message={errors.name} className="mt-2" />
+                    </div>
+
+                    <div>
+                        <InputLabel htmlFor="store_name" value="Store Name" />
+
+                        <TextInput
+                            id="store_name"
+                            type="text"
+                            name="store_name"
+                            value={data.store_name}
+                            className="mt-1 block w-full"
+                            autoComplete="username"
+                            onChange={(e) => setData('store_name', e.target.value)}
+                            required
+                        />
+                        <InputError message={errors.store_name} className="mt-2" />
+                    </div>
+                </div>
+
+
+                <div className='mt-4'>
+                    <InputLabel htmlFor="phone_no" value="Phone No" />
+                    <TextInput
+                        id="phone_no"
+                        className="mt-1 block w-full"
+                        type='number'
+                        value={data.phone_no}
+                        onChange={(e) => setData('phone_no', e.target.value)}
+                    />
+                    <InputError message={errors.address} className="mt-2" />
+                </div>
+
+                <div className='mt-4'>
+                    <InputLabel htmlFor="address" value="Address" />
+                    <Textarea
+                        id="address"
+                        value={data.address}
+                        onChange={(e) => setData('address', e.target.value)}
+                    />
+                    <InputError message={errors.address} className="mt-2" />
                 </div>
 
                 <div className="mt-4">

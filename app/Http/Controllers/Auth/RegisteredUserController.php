@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Models\Store;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -30,22 +31,31 @@ class RegisteredUserController extends Controller
      */
     public function store(Request $request): RedirectResponse
     {
-        $request->validate([
-            'name' => 'required|string|max:255',
+        $validated['user'] = $request->validate([
             'email' => 'required|string|lowercase|email|max:255|unique:'.User::class,
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
 
-        $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
+        $request->merge([
+            'phone_no' => preg_replace('/^0/', '+62', $request->input('phone_no')),
         ]);
+
+        $validated['store'] = $request->validate([
+            'store_name' => 'required|string|max:255|:unique:'.Store::class,
+            'phone_no' => 'required|min:12|max:14',
+            'address' => 'max:255',
+        ]);
+
+        $user = User::create($validated['user']);
 
         event(new Registered($user));
 
         Auth::login($user);
 
-        return redirect(route('dashboard', absolute: false));
+        $validated['store']['user_id'] = Auth::id();
+
+        Store::create($validated['store']);
+
+        return redirect(route('dashboard'));
     }
 }

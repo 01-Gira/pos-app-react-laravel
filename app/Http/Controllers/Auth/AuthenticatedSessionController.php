@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Auth;
 
+use App\Models\Store;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
 use Illuminate\Http\RedirectResponse;
@@ -31,9 +32,21 @@ class AuthenticatedSessionController extends Controller
     {
         $request->authenticate();
 
+        $userId = Auth::id();
+
+        $storeExists = Store::where('user_id', $userId)->exists();
+
+        if (!$storeExists) {
+            Auth::logout();
+            return redirect()->route('login')->with([
+                'type_message' => 'error',
+                'message' => 'User is not associated with any store.'
+            ]);
+        }
+
         $request->session()->regenerate();
 
-        return redirect()->intended(route('dashboard', absolute: false));
+        return redirect()->intended(route('dashboard'));
     }
 
     /**

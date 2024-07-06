@@ -9,4 +9,13 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 class Product extends Model
 {
     use HasFactory, HasUuids;
+
+    protected $fillable = ['barcode', 'product_name', 'category_id', 'stock', 'price', 'picture'];
+
+
+    public function category()
+    {
+        return $this->belongsTo(Category::class);
+    }
+
 }

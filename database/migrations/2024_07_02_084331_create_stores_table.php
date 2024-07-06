@@ -12,11 +12,15 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('stores', function (Blueprint $table) {
-            $table->uuid('id');
-            $table->string('uniq_code')->unique();
+            $table->uuid('id')->primary();
+            $table->uuid('user_id');
             $table->string('store_name');
+            $table->string('phone_no');
             $table->text('address');
             $table->timestamps();
+
+            $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
+
         });
     }
 

@@ -5,15 +5,34 @@ import UpdateProfileInformationForm from './Partials/UpdateProfileInformationFor
 import { Head } from '@inertiajs/react';
 import { PageProps } from '@/types';
 
-export default function Edit({ auth, mustVerifyEmail, status }: PageProps<{ mustVerifyEmail: boolean, status?: string }>) {
+export default function Edit({ title, auth, mustVerifyEmail, status, flash }: PageProps<{ mustVerifyEmail: boolean, status?: string }>) {
     return (
         <AuthenticatedLayout
             user={auth.user}
-            header={<h2 className="font-semibold text-xl text-gray-800 leading-tight">Profile</h2>}
+            header={<h2 className="font-semibold text-xl text-gray-800 leading-tight">{title}</h2>}
+            flash={flash}
         >
             <Head title="Profile" />
+            <div className='space-y-6'>
+                <div className='p-7 border border-gray-200 dark:border-gray-700 shadow-lg rounded-lg'>
+                    <UpdateProfileInformationForm
+                            mustVerifyEmail={mustVerifyEmail}
+                            status={status}
+                            className="max-w-xl"
+                        />
+                </div>
 
-            <div className="py-12">
+                <div className='p-7 border border-gray-200 dark:border-gray-700 shadow-lg rounded-lg'>
+                    <UpdatePasswordForm className="max-w-xl" />
+                </div>
+
+                <div className='p-7 border border-gray-200 dark:border-gray-700 shadow-lg rounded-lg'>
+                    <DeleteUserForm className="max-w-xl" />
+
+                </div>
+            </div>
+
+            {/* <div className="py-12">
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
                     <div className="p-4 sm:p-8 bg-white shadow sm:rounded-lg">
                         <UpdateProfileInformationForm
@@ -31,7 +50,7 @@ export default function Edit({ auth, mustVerifyEmail, status }: PageProps<{ must
                         <DeleteUserForm className="max-w-xl" />
                     </div>
                 </div>
-            </div>
+            </div> */}
         </AuthenticatedLayout>
     );
 }
