@@ -61,12 +61,15 @@ class CashierController extends Controller
      /**
      * Get data transaction on hold .
      */
-    public function getDataTransaction()
+    public function getDataTransaction($param)
     {
+        // dd($param); 
         $transactions = Transaction::where('status', 'hold')->orderByDesc('created_at')->get();
 
         return response()->json([
-            'transactions' => $transactions
+            'type_message' => 'succes',
+            'message' => 'Success get data',
+            'transactions' => $transactions 
         ]);
     }
 
