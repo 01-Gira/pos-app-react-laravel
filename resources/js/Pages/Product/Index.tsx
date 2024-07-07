@@ -1,16 +1,7 @@
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import { PageProps, Product } from "@/types";
 import { Head, router, useForm } from "@inertiajs/react";
-import {
-    Button,
-    Dropdown,
-    FloatingLabel,
-    Label,
-    Modal,
-    Pagination,
-    Table,
-    TextInput,
-} from "flowbite-react";
+import { Button, FloatingLabel, Label, Modal, TextInput } from "flowbite-react";
 import { useEffect, useState } from "react";
 import DataTable, { TableColumn } from "react-data-table-component";
 import { HiOutlinePlus, HiOutlineExclamationCircle } from "react-icons/hi";
@@ -65,11 +56,11 @@ export default function Index({
         );
     };
 
-    const [deleteId, setDeleteId] = useState<string | null>(null);
+    const [productId, setProductId] = useState<string | null>(null);
 
     const deleteData = async () => {
-        if (deleteId) {
-            destroy(route("master.products.destroy", { product: deleteId }), {
+        if (productId) {
+            destroy(route("master.products.destroy", { product: productId }), {
                 onSuccess: () => {
                     setModalDelete(false);
                     reset();
@@ -78,42 +69,48 @@ export default function Index({
         }
     };
 
-    const { delete: destroy, put, processing, errors, reset } = useForm();
+    const {
+        data,
+        setData,
+        delete: destroy,
+        put,
+        post,
+        processing,
+        errors,
+        reset,
+    } = useForm({
+        product_id: "",
+        discount: 0,
+    });
 
     const confirmDataDeletion = (id: string) => {
-        console.log(id);
-        setDeleteId(id);
+        setProductId(id);
 
         setModalDelete(true);
     };
 
-    const [discount, setDiscount] = useState(0);
     const [openModalDiscount, setModalDiscount] = useState(false);
     const [openModalDelete, setModalDelete] = useState(false);
     const [selectedProductId, setSelectedProductId] = useState<string | null>(
         null
     );
-    const addDiscountToProduct = (id: string) => {
-        setSelectedProductId(id);
+    const [selectedProductDiscount, setSelectedProductDiscount] = useState<
+        number | 0
+    >(0);
+
+    const addDiscountToProduct = (id: string, discount: number) => {
+        setProductId(id);
+        setData("discount", discount);
         setModalDiscount(true);
     };
 
     const applyDiscount = () => {
-        if (selectedProductId) {
-            router.post(
-                route("master.products.add-discount", selectedProductId),
-                { discount },
-                {
-                    onSuccess: () => {
-                        setModalDiscount(false);
-                        setSelectedProductId(null);
-                        setDiscount(0);
-                    },
-                    onError: (errors) => {
-                        console.error(errors);
-                    },
-                }
-            );
+        if (productId) {
+            post(route("master.products.add-discount", productId), {
+                onFinish: () => {
+                    setModalDiscount(false);
+                },
+            });
         }
     };
 
@@ -139,6 +136,11 @@ export default function Index({
             sortable: true,
         },
         {
+            name: "Discount",
+            selector: (row: Product) => row.discount?.discount || 0,
+            sortable: true,
+        },
+        {
             name: "Price",
             selector: (row: Product) => row.price,
             sortable: true,
@@ -160,7 +162,14 @@ export default function Index({
                         Edit
                     </a>
                     <button
-                        onClick={() => addDiscountToProduct(row.id)}
+                        onClick={() => {
+                            addDiscountToProduct(
+                                row.id,
+                                row.discount?.discount || 0
+                            );
+                            // setData("id", row.id);
+                            // setData("discount", row.discount?.discount || 0);
+                        }}
                         className="font-medium text-green-500 hover:underline dark:text-red-300"
                     >
                         Discount
@@ -220,9 +229,12 @@ export default function Index({
                             <TextInput
                                 id="discount"
                                 type="number"
-                                value={discount}
+                                value={data.discount}
                                 onChange={(e) =>
-                                    setDiscount(parseFloat(e.target.value))
+                                    setData(
+                                        "discount",
+                                        parseInt(e.target.value)
+                                    )
                                 }
                                 min={0}
                                 max={100}
@@ -230,7 +242,13 @@ export default function Index({
                         </div>
                     </Modal.Body>
                     <Modal.Footer>
-                        <Button onClick={applyDiscount}>Apply Discount</Button>
+                        <Button onClick={applyDiscount} disabled={processing}>
+                            {processing ? (
+                                <ClipLoader size="20" />
+                            ) : (
+                                "Apply Discount"
+                            )}
+                        </Button>
                         <Button
                             color="gray"
                             onClick={() => setModalDiscount(false)}

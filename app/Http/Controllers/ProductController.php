@@ -27,7 +27,7 @@ class ProductController extends Controller
                 return $query->where('product_name', 'like', "%{$search}%")
                              ->orWhere('barcode', 'like', "%{$search}%");
             })
-            ->with('category')
+            ->with('category', 'discount')
             ->orderByDesc('created_at')
             ->paginate($perPage);
 
@@ -105,7 +105,7 @@ class ProductController extends Controller
 
         if ($request->hasFile('picture')) {
 
-            if ($product->picture) {
+            if ($product && $product->picture) {
                 Storage::disk('public')->delete($product->picture);
             }
 
@@ -167,7 +167,6 @@ class ProductController extends Controller
      */
     public function update(Request $request, Product $product)
     {
-
         $validated = $request->validate([
             'barcode' => 'required|string|max:225',
             'product_name' => 'required|string|max:225',

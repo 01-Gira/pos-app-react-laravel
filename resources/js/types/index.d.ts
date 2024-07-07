@@ -1,8 +1,18 @@
 export interface User {
     id: string;
-    name: string;
+    store: Store;
     email: string;
     email_verified_at: string;
+}
+
+export interface Store {
+    id: string;
+    store_name: string;
+    user_id: string;
+    phone_no: any;
+    address: string;
+    created_at: Date;
+    updated_at: Date;
 }
 
 export interface Product {
@@ -14,28 +24,28 @@ export interface Product {
     stock: number;
     quantity: number;
     price: number;
-    discount: number;
     total_price: number;
     pictureBase64: string;
     category: Category | null;
+    discount: Discount | null;
 }
 
-export interface ProductTransactions {
+export interface TransactionDetail {
     id: string;
-    barcode: string;
-    product_name: string;
     quantity: number;
-    price: number;
     discount: number;
+    price: number;
     total_price: number;
-    category: Category | null;
+    product: Product;
 }
 
 export interface Transaction {
     id: string;
-    products: Product[];
-    total_price: number;
+    transaction_details: TransactionDetail[];
+    payment_method: any;
+    subtotal: number;
     ppn: number;
+    status: string;
     total_payment: number;
 }
 
@@ -43,6 +53,7 @@ export interface HoldTransaction {
     id: string;
     status: string;
     created_at: Date;
+    updated_at: Date;
 }
 
 export interface Discount {
@@ -92,9 +103,9 @@ export type PageProps<
     auth: {
         user: User;
     };
+    transaction: Transaction;
     products: Product[];
     discounts: Discount[];
-    // cashiers: Cashier[];
     product: Product;
     categories: Category[];
     suppliers: Supplier[];

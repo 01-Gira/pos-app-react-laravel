@@ -29,9 +29,16 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
+        $user = $request->user();
+
+        // Pastikan user terautentikasi sebelum memuat relasi 'store'
+        if ($user) {
+            $user->load('store');
+        }
+        
         return array_merge(parent::share($request), [
             'auth' => [
-                'user' => $request->user(),
+                'user' => $user,
             ],
             'flash' => [
                 'type_message' => fn () => $request->session()->get('type_message'),

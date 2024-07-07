@@ -47,7 +47,8 @@ export default function Edit({
 
             const reader = new FileReader();
             reader.onloadend = () => {
-                setImagePreview(reader.result as string);
+                const base64Result = reader.result as string;
+                setImagePreview(base64Result); // Simpan hasil base64 ke state imagePreview
             };
             reader.readAsDataURL(file);
         }
@@ -58,6 +59,8 @@ export default function Edit({
             setImagePreview(product.pictureBase64);
         }
     }, [product.pictureBase64]);
+
+    console.log(data);
     return (
         <AuthenticatedLayout
             user={auth.user}
@@ -151,8 +154,10 @@ export default function Edit({
                                 <option value="">Select</option>
                                 {categories.map((category) => (
                                     <option
+                                        id={category.id}
                                         key={category.id}
                                         value={category.id}
+                                        selected
                                     >
                                         {category.category_name}
                                     </option>

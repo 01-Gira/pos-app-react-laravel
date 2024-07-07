@@ -15,6 +15,7 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->timestamp('transaction_date');
             $table->string('payment_method')->nullable();
+            $table->bigInteger('subtotal')->nullable();
             $table->bigInteger('ppn')->nullable();
             $table->bigInteger('total_payment')->nullable();
             $table->string('status')->nullable();

@@ -16,6 +16,7 @@ return new class extends Migration
             $table->string('uniq_code');
             $table->string('supplier_name');
             $table->string('address');
+            $table->string('phone_no');
             $table->timestamps();
         });
     }

@@ -27,25 +27,34 @@ Route::get('/dashboard', function () {
 
 
 Route::middleware('auth')->group(function () {
-    Route::resource('/transaction/cashier', CashierController::class)->names('transaction.cashier');
-    Route::post('/transaction/cashier/new-transaction', [CashierController::class, 'newTransaction'])->name('transaction.cashier.new-transaction');
-    Route::put('/transaction/cashier/hold-transaction/{transaction}', [CashierController::class, 'holdTransaction'])->name('transaction.cashier.hold-transaction');
-    Route::post('/transaction/cashier/submit-transaction', [CashierController::class, 'submitTransaction'])->name('transaction.cashier.submit-transaction');
-    Route::get('/transaction/cashier/get-data-transaction/{param}', [CashierController::class, 'getDataTransaction'])->name('transaction.cashier.get-data-transactions');
 
-    Route::post('/transaction/cashier/scan-product', [CashierController::class, 'scanProduct'])->name('transaction.cashier.scan-product');
+    Route::group(['prefix' => 'transaction'], function() {
 
+        Route::resource('cashier', CashierController::class)->names('transaction.cashier');
+        Route::post('cashier/new-transaction', [CashierController::class, 'newTransaction'])->name('transaction.cashier.new-transaction');
+        Route::put('cashier/hold-transaction/{transaction}', [CashierController::class, 'holdTransaction'])->name('transaction.cashier.hold-transaction');
+        Route::post('cashier/submit-transaction', [CashierController::class, 'submitTransaction'])->name('transaction.cashier.submit-transaction');
+        Route::get('cashier/get-data-transaction/{param}', [CashierController::class, 'getDataTransaction'])->name('transaction.cashier.get-data-transactions');
+        Route::get('cashier/print/{transaction}', [CashierController::class, 'print'])->name('transaction.cashier.print');
+    
+        Route::resource('purchase-product', PurchaseProductController::class)->names('transaction.purchase-product');
+    });
 
-    Route::resource('/master/products', ProductController::class)->names('master.products');
-    Route::get('/master/products/get-data/{barcode}', [ProductController::class, 'getDataProduct'])->name('master.products.get-data');
-    Route::post('/master/products/add-discount/{id}', [ProductController::class, 'addDiscountProduct'])->name('master.products.add-discount');
+    Route::group(['prefix' => 'master'], function() {
 
-    Route::resource('/master/discounts', DiscountController::class)->names('master.discounts');
-
-    Route::resource('/master/categories', CategoryController::class)->names('master.categories');
-
-    Route::resource('/master/suppliers', SupplierController::class)->names('master.suppliers');
-    Route::get('/master/suppliers/get-data/{uniq_code}', [SupplierController::class, 'getDataSupplier'])->name('master.suppliers.get-data');
+        Route::resource('products', ProductController::class)->names('master.products');
+        Route::get('products/get-data/{barcode}', [ProductController::class, 'getDataProduct'])->name('master.products.get-data');
+        Route::post('products/add-discount/{id}', [ProductController::class, 'addDiscountProduct'])->name('master.products.add-discount');
+    
+        Route::resource('discounts', DiscountController::class)->names('master.discounts');
+    
+        Route::resource('categories', CategoryController::class)->names('master.categories');
+    
+        Route::resource('suppliers', SupplierController::class)->names('master.suppliers');
+        Route::get('suppliers/get-data/{uniq_code}', [SupplierController::class, 'getDataSupplier'])->name('master.suppliers.get-data');
+    
+    });
+  
 
 
     Route::get('/setting/profile', [ProfileController::class, 'edit'])->name('setting.profile.edit');
