@@ -11,4 +11,9 @@ class Transaction extends Model
     use HasFactory, HasUuids;
 
     protected $fillable = ['transaction_date', 'payment_method', 'total_amount', 'ppn'];
+
+    public function transactionDetails()
+    {
+        return $this->hasMany(TransactionDetail::class);
+    }
 }

@@ -38,7 +38,7 @@ class CashierController extends Controller
 
         return response()->json([
             'type_message' => 'success',
-            'message' => 'Created new transaction successfully',
+            'message' => 'Successfully created new transaction',
             'transaction' => $transaction
         ]);
     }
@@ -46,14 +46,27 @@ class CashierController extends Controller
     /**
      * Scan product to save into Transaction Detail.
      */
-    public function holdTransaction(Transaction $transaction)
+    public function holdTransaction(Request $request, Transaction $transaction)
     {
-        $transaction->status = 'hold';
-        $transaction->save();
+        $status = $request->status;
+        $transactions = $request->transactions;
 
+        // dd($status);
+        $transaction->status = $status;
+
+        if($transactions){
+            $transaction->subtotal = $transactions[0]['subtotal'];
+            $transaction->ppn = $transactions[0]['ppn'];
+            $transaction->total_payment = $transactions[0]['total_payment'];
+            $transaction->payment_method = $transactions[0]['payment_method'];
+        }
+
+        $transaction->save();
+        $transaction->load('transactionDetails.product'); 
+    
         return response()->json([
             'type_message' => 'success',
-            'message' => 'Transaction on hold successfully',
+            'message' => 'Successfully Change status on '.$status,
             'transaction' => $transaction
         ]);
     }
@@ -61,10 +74,20 @@ class CashierController extends Controller
      /**
      * Get data transaction on hold .
      */
-    public function getDataTransaction($param)
+    public function getDataTransaction(Request $request, $param)
     {
-        // dd($param); 
-        $transactions = Transaction::where('status', 'hold')->orderByDesc('created_at')->get();
+        $keyword = $request->query('keyword');
+
+        $query = Transaction::where('status', $param);
+
+        if (!empty($keyword)) {
+            $query->where(function ($q) use ($keyword) {
+                $q->where('id', 'like', '%' . $keyword . '%')
+                  ->orWhere('created_at', 'like', '%' . $keyword . '%')
+                  ->orWhere('updated_at', 'like', '%' . $keyword . '%');
+            });
+        }
+        $transactions = $query->orderByDesc('created_at')->get();
 
         return response()->json([
             'type_message' => 'succes',
@@ -86,44 +109,22 @@ class CashierController extends Controller
 
         return response()->json([
             'type_message' => 'success',
-            'message' => 'Created new transaction successfully',
+            'message' => 'Successfully Created new transaction',
             'transaction' => $transaction
         ]);
     }
 
     /**
-     * Scan product to save into Transaction Detail.
+     * Print Receipt .
      */
-    public function scanProduct(Request $request)
+    public function print(Transaction $transaction)
     {
-        $transactions = $request->transactions;
+        $transaction->load('transactionDetails.product'); 
 
-        $transaction = $transactions[0];
-        // dd($transaction);
-        Transaction::where('id', $transaction['id'])->update([
-            'ppn' => $transaction['ppn'],
-            'total_payment' => $transaction['total_payment'],
-            'status' => 'process'
-        ]);
-
-        foreach ($transaction['products'] as $key => $value) {
-            TransactionDetail::updateOrCreate(
-                [
-                    'transaction_id' => $transaction['id'],
-                    'product_id' => $value['id']
-                ],
-                [
-                'quantity' => $value['quantity'],
-                'discount' => $value['discount'],
-                'price' => $value['price'],
-                'total_price' => $value['total_price']
-                ]
-            );
-        }
-
-        return response()->json([
-            'type_message' => 'success',
-            'message' => 'Created new transaction detail successfully',
+        return Inertia::render('Cashier/Print', [
+            'title' => 'Cashier',
+            'status' => session('status'),
+            'transaction' => $transaction 
         ]);
     }
 
@@ -141,7 +142,37 @@ class CashierController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        $transactions = $request->transactions;
+
+        $transaction = $transactions[0];
+ 
+        Transaction::where('id', $transaction['id'])->update([
+            'ppn' => $transaction['ppn'],
+            'subtotal' => $transaction['subtotal'],
+            'total_payment' => $transaction['total_payment'],
+            'status' => 'process',
+            'payment_method' => $transaction['payment_method']
+        ]);
+
+        foreach ($transaction['transaction_details'] as $key => $value) {
+            TransactionDetail::updateOrCreate(
+                [
+                    'transaction_id' => $transaction['id'],
+                    'product_id' => $value['product']['id']
+                ],
+                [
+                'quantity' => $value['quantity'],
+                'discount' => $value['discount'],
+                'price' => $value['price'],
+                'total_price' => $value['total_price']
+                ]
+            );
+        }
+
+        return response()->json([
+            'type_message' => 'success',
+            'message' => 'Successfully Created new transaction detail',
+        ]);
     }
 
     /**

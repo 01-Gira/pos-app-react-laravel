@@ -9,4 +9,8 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 class Store extends Model
 {
     use HasFactory, HasUuids;
+
+    public function user() {
+        return $this->belongsTo(User::class);
+    }
 }

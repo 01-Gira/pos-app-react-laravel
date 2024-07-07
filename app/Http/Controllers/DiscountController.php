@@ -18,13 +18,16 @@ class DiscountController extends Controller
 
         $discounts = Discount::query()
             ->when($search, function ($query, $search) {
-                return $query->where('product_name', 'like', "%{$search}%")
-                                ->orWhere('barcode', 'like', "%{$search}%");
+                return $query->whereHas('product', function ($query) use ($search) {
+                    $query->where('product_name', 'like', "%{$search}%")
+                          ->orWhere('barcode', 'like', "%{$search}%")
+                          ->orWhere('discount', 'like', "%{$search}%");
+                });
             })
             ->with('product')
             ->orderByDesc('created_at')
             ->paginate($perPage);
-            // dd($discounts);
+
         return Inertia::render('Discount/Index', [
             'title' => 'Master Discounts',
             'status' => session('status'),

@@ -12,4 +12,9 @@ class TransactionDetail extends Model
     use HasFactory, HasUuids;
 
     protected $fillable = ['transaction_id', 'product_id', 'quantity', 'price', 'discount', 'total_price'];
+
+    public function product()
+    {
+        return $this->belongsTo(Product::class);
+    }
 }
