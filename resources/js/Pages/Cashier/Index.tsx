@@ -22,7 +22,7 @@ import { BeatLoader, ClipLoader } from "react-spinners";
 import { HiOutlineExclamationCircle } from "react-icons/hi";
 import DataTable, { TableColumn } from "react-data-table-component";
 import { format } from "date-fns";
-import { redirect } from "react-router-dom";
+import Swal from "sweetalert2";
 
 export default function Index({ title, auth, flash }: PageProps) {
     const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -30,8 +30,19 @@ export default function Index({ title, auth, flash }: PageProps) {
         []
     );
 
-    const [modalNotif, setModalNotif] = useState(false);
-    const [modalNotifText, setModalNotifText] = useState<string | null>("");
+    const [swalCustomClassProps, setSwalProps] = useState({
+        popup: "!relative !transform !overflow-hidden !rounded-lg !bg-white !text-left !shadow-xl !transition-all sm:!my-8 sm:!w-full sm:!max-w-lg !p-0 !grid-cols-none",
+        icon: "!m-0 !mx-auto !flex !h-12 !w-12 !flex-shrink-0 !items-center !justify-center !rounded-full !border-0 !bg-red-100 sm:!h-10 sm:!w-10 !mt-5 sm!mt-6 sm:!ml-6 !col-start-1 !col-end-3 sm:!col-end-2",
+        title: "!p-0 !pt-3 !text-center sm:!text-left !text-base !font-semibold !leading-6 !text-gray-900 !pl-4 !pr-4 sm:!pr-6 sm:!pl-0 sm:!pt-6 sm:!ml-4 !col-start-1 sm:!col-start-2 !col-end-3",
+        htmlContainer:
+            "!mt-2 sm:!mt-0 !m-0 !text-center sm:!text-left !text-sm !text-gray-500 !pl-4 sm:!pl-0 !pr-4 !pb-4 sm:!pr-6 sm:!pb-4 sm:!ml-4 !col-start-1 sm:!col-start-2 !col-end-3",
+        actions:
+            "!bg-gray-50 !px-4 !py-3 sm:!flex sm:!flex-row-reverse sm:!px-6 !w-full !justify-start !mt-0 !col-start-1 !col-end-3",
+        confirmButton:
+            "inline-flex w-full justify-center rounded-md bg-cyan-700 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-cyan-800 sm:ml-3 sm:w-auto",
+        cancelButton:
+            "mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:mt-0 sm:w-auto",
+    });
 
     const barcodeInput = useRef<HTMLInputElement>(null);
 
@@ -55,9 +66,6 @@ export default function Index({ title, auth, flash }: PageProps) {
                     if (barcodeInput.current) {
                         barcodeInput.current.disabled = false;
                     }
-                    // if (buttonTransaction.current) {
-                    //     buttonTransaction.current.disabled = true;
-                    // }
 
                     setTransactions([
                         {
@@ -76,8 +84,13 @@ export default function Index({ title, auth, flash }: PageProps) {
                 setLoading(false);
             }
         } else {
-            setModalNotif(true);
-            setModalNotifText("Sorry, There is transaction on process");
+            Swal.fire({
+                buttonsStyling: false,
+                customClass: swalCustomClassProps,
+                icon: "info",
+                title: "Info",
+                text: "There is a transaction in progress. You can't create a new transaction",
+            });
         }
     };
 
@@ -157,10 +170,6 @@ export default function Index({ title, auth, flash }: PageProps) {
                         }
                     );
 
-                    // Optionally update the transaction's total price, PPN, etc. here
-
-                    saveTransaction();
-
                     return updatedTransactions;
                 });
             }
@@ -189,10 +198,13 @@ export default function Index({ title, auth, flash }: PageProps) {
                 console.error("Error saving transaction:", error);
             }
         } else {
-            setModalNotif(true);
-            setModalNotifText(
-                "Sorry, There is no transaction on process or products list is empty"
-            );
+            Swal.fire({
+                buttonsStyling: false,
+                customClass: swalCustomClassProps,
+                icon: "info",
+                title: "Info",
+                text: "There is no transaction in progress or products list is empty",
+            });
         }
     };
 
@@ -200,8 +212,13 @@ export default function Index({ title, auth, flash }: PageProps) {
 
     const holdTransaction = async (id: any, status: string) => {
         if (status == "hold" && !transactionId) {
-            setModalNotif(true);
-            setModalNotifText("Sorry, There is no transaction on process");
+            setSwalProps((prevSwalProps) => ({
+                ...prevSwalProps,
+                show: true,
+                icon: "info",
+                title: "Info",
+                text: "There is no transaction in progress",
+            }));
         } else if (id) {
             try {
                 setLoading(true);
@@ -214,7 +231,6 @@ export default function Index({ title, auth, flash }: PageProps) {
                     }
                 );
                 const transaction = res.data.transaction;
-                console.log(res.data.transaction);
 
                 if (transaction) {
                     if (transaction.status == "process") {
@@ -244,7 +260,7 @@ export default function Index({ title, auth, flash }: PageProps) {
                         }
                     }
                 }
-                // if()
+
                 setLoading(false);
             } catch (error) {
                 setLoading(false);
@@ -330,8 +346,13 @@ export default function Index({ title, auth, flash }: PageProps) {
                 console.log(error);
             }
         } else {
-            setModalNotif(true);
-            setModalNotifText("Sorry, There is transaction on process");
+            Swal.fire({
+                customClass: swalCustomClassProps,
+                buttonsStyling: false,
+                icon: "info",
+                title: "Info",
+                text: "There is a transaction in progress. You can't open list hold transaction",
+            });
         }
     };
 
@@ -365,10 +386,13 @@ export default function Index({ title, auth, flash }: PageProps) {
 
             window.open(url, "_blank");
         } else {
-            setModalNotif(true);
-            setModalNotifText(
-                "Sorry, There is no transaction on process or product list is empty"
-            );
+            setSwalProps((prevSwalProps) => ({
+                ...prevSwalProps,
+                show: true,
+                icon: "info",
+                title: "Info",
+                text: "There is no transaction in progress or products list is empty",
+            }));
         }
     };
 
@@ -399,6 +423,34 @@ export default function Index({ title, auth, flash }: PageProps) {
         searchHoldTransaction(keyword);
     };
 
+    const [paymentMethod, setPaymentMethod] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (paymentMethod !== null) {
+            const save = async () => {
+                await saveTransaction();
+                setPaymentMethod(null);
+            };
+
+            save();
+        }
+    }, [paymentMethod]);
+
+    useEffect(() => {
+        const save = async () => {
+            if (
+                transactionId &&
+                transactions &&
+                transactions.length > 0 &&
+                transactions[0].transaction_details.length > 0
+            ) {
+                await saveTransaction();
+            }
+        };
+
+        save();
+    }, [transactions]);
+
     return (
         <AuthenticatedLayout
             user={auth.user}
@@ -410,29 +462,6 @@ export default function Index({ title, auth, flash }: PageProps) {
             flash={flash}
         >
             <Head title={title} />
-
-            <Modal
-                dismissible
-                show={modalNotif}
-                size="sm"
-                onClose={() => setModalNotif(false)}
-                popup
-                className={`animate-fadeIn duration-300 ${
-                    modalNotif ? "opacity-100" : "opacity-0 pointer-events-none"
-                }`}
-            >
-                <Modal.Header></Modal.Header>
-                <Modal.Body>
-                    <div className="text-center">
-                        <HiOutlineExclamationCircle className="mx-auto mb-4 h-14 w-14 text-gray-400 dark:text-gray-200" />
-                        {modalNotifText && (
-                            <h3 className="mb-5 text-lg font-normal text-gray-500 dark:text-gray-400">
-                                {modalNotifText}
-                            </h3>
-                        )}
-                    </div>
-                </Modal.Body>
-            </Modal>
 
             <div className="p-7 border border-gray-200 dark:border-gray-700 shadow-lg rounded-lg">
                 <div className="flex justify-between">
@@ -669,8 +698,6 @@ export default function Index({ title, auth, flash }: PageProps) {
                                                                     }
                                                                 )
                                                         );
-
-                                                        await saveTransaction();
                                                     }}
                                                 />
                                             </Table.Cell>
@@ -732,8 +759,6 @@ export default function Index({ title, auth, flash }: PageProps) {
                                                                         }
                                                                     )
                                                             );
-
-                                                            await saveTransaction();
                                                         }}
                                                     />
                                                 )}
@@ -780,7 +805,6 @@ export default function Index({ title, auth, flash }: PageProps) {
                                     <Select
                                         value={transaction.payment_method}
                                         onChange={async (e) => {
-                                            console.log(e.target.value);
                                             const updatedTransactions =
                                                 transactions.map((trans) => {
                                                     if (
@@ -800,7 +824,7 @@ export default function Index({ title, auth, flash }: PageProps) {
                                                 updatedTransactions
                                             );
 
-                                            await saveTransaction();
+                                            setPaymentMethod(e.target.value);
                                         }}
                                     >
                                         <option value="">Select</option>
@@ -826,14 +850,6 @@ export default function Index({ title, auth, flash }: PageProps) {
                             <BeatLoader />
                         ) : (
                             <>
-                                <Button
-                                    color="failure"
-                                    onClick={() =>
-                                        setModalHoldTransaction(true)
-                                    }
-                                >
-                                    Hold
-                                </Button>
                                 <Button
                                     color="success"
                                     className="ms-3"

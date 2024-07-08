@@ -176,6 +176,7 @@ export default function Create({ title, auth, flash, categories }: PageProps) {
                                     <option
                                         key={category.id}
                                         value={category.id}
+                                        selected
                                     >
                                         {category.category_name}
                                     </option>

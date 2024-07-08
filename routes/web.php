@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\CashierController;
+use App\Http\Controllers\PurchaseProductController;
 
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\DiscountController;
@@ -37,7 +38,10 @@ Route::middleware('auth')->group(function () {
         Route::get('cashier/get-data-transaction/{param}', [CashierController::class, 'getDataTransaction'])->name('transaction.cashier.get-data-transactions');
         Route::get('cashier/print/{transaction}', [CashierController::class, 'print'])->name('transaction.cashier.print');
     
-        Route::resource('purchase-product', PurchaseProductController::class)->names('transaction.purchase-product');
+        Route::resource('purchase-products', PurchaseProductController::class)->names('transaction.purchase-products');
+        Route::post('purchase-products/new-purchase', [PurchaseProductController::class, 'newPurchase'])->name('transaction.purchase-products.new-purchase');
+        Route::post('purchase-products/submit', [PurchaseProductController::class, 'submit'])->name('transaction.purchase-products.submit');
+
     });
 
     Route::group(['prefix' => 'master'], function() {

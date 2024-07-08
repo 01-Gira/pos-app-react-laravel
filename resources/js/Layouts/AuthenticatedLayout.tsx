@@ -6,12 +6,18 @@ import { Alert, Toast } from "flowbite-react";
 import SidebarLayout from "./Authenticated/SidebarLayout";
 import HeaderLayout from "./Authenticated/HeaderLayout";
 
+interface AuthenticatedLayoutProps {
+    user: User;
+    header?: ReactNode;
+    flash: Flash;
+}
+
 export default function AuthenticatedLayout({
     user,
     header,
     children,
     flash,
-}: PropsWithChildren<{ user: User; header?: ReactNode; flash: Flash }>) {
+}: PropsWithChildren<AuthenticatedLayoutProps>) {
     const [sidebarOpen, setSidebarOpen] = useState(true);
 
     return (

@@ -11,6 +11,6 @@ class Supplier extends Model
 {
     use HasFactory, HasUuids;
 
-    protected $fillable = ['uniq_code', 'supplier_name', 'address'];
+    protected $fillable = ['uniq_code', 'supplier_name', 'phone_no','address'];
 
 }

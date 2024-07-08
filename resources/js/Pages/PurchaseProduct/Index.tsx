@@ -4,6 +4,7 @@ import {
     PageProps,
     TransactionDetail,
     Transaction,
+    Purchase,
 } from "@/types";
 import { Head } from "@inertiajs/react";
 import axios from "axios";
@@ -23,61 +24,70 @@ import { HiOutlineExclamationCircle } from "react-icons/hi";
 import DataTable, { TableColumn } from "react-data-table-component";
 import { format } from "date-fns";
 import { redirect } from "react-router-dom";
+import { stringify } from "querystring";
+import Swal from "sweetalert2";
 
-export default function Index({ title, auth, flash }: PageProps) {
-    const [transactions, setTransactions] = useState<Transaction[]>([]);
-    const [holdtransactions, setHoldTransactions] = useState<HoldTransaction[]>(
-        []
-    );
+export default function Index({ title, auth, flash, suppliers }: PageProps) {
+    const [purchase, setPurchase] = useState<Purchase>();
 
-    const [modalNotif, setModalNotif] = useState(false);
-    const [modalNotifText, setModalNotifText] = useState<string | null>("");
+    const [swalCustomClass, setSwalCustomClass] = useState({
+        popup: "!relative !transform !overflow-hidden !rounded-lg !bg-white !text-left !shadow-xl !transition-all sm:!my-8 sm:!w-full sm:!max-w-lg !p-0 !grid-cols-none",
+        icon: "!m-0 !mx-auto !flex !h-12 !w-12 !flex-shrink-0 !items-center !justify-center !rounded-full !border-0 !bg-red-100 sm:!h-10 sm:!w-10 !mt-5 sm!mt-6 sm:!ml-6 !col-start-1 !col-end-3 sm:!col-end-2",
+        title: "!p-0 !pt-3 !text-center sm:!text-left !text-base !font-semibold !leading-6 !text-gray-900 !pl-4 !pr-4 sm:!pr-6 sm:!pl-0 sm:!pt-6 sm:!ml-4 !col-start-1 sm:!col-start-2 !col-end-3",
+        htmlContainer:
+            "!mt-2 sm:!mt-0 !m-0 !text-center sm:!text-left !text-sm !text-gray-500 !pl-4 sm:!pl-0 !pr-4 !pb-4 sm:!pr-6 sm:!pb-4 sm:!ml-4 !col-start-1 sm:!col-start-2 !col-end-3",
+        actions:
+            "!bg-gray-50 !px-4 !py-3 sm:!flex sm:!flex-row-reverse sm:!px-6 !w-full !justify-start !mt-0 !col-start-1 !col-end-3",
+        confirmButton:
+            "inline-flex w-full justify-center rounded-md bg-cyan-700 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-cyan-800 sm:ml-3 sm:w-auto",
+        cancelButton:
+            "mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:mt-0 sm:w-auto",
+    });
 
     const barcodeInput = useRef<HTMLInputElement>(null);
 
     const buttonTransaction = useRef<HTMLButtonElement>(null);
     const [loading, setLoading] = useState(false);
-    const [openModalTableHoldTransaction, setOpenModalTableHoldTransaction] =
-        useState(false);
 
-    const transactionId = transactions.length > 0 ? [transactions[0].id] : null;
+    const purchaseId = purchase?.id || null;
 
-    const newTransaction = async () => {
-        if (!transactionId) {
+    const newPurchase = async () => {
+        if (!purchaseId) {
             try {
                 setLoading(true);
 
                 const res = await axios.post(
-                    route("transaction.cashier.new-transaction")
+                    route("transaction.purchase-products.new-purchase")
                 );
-                const transaction = res.data.transaction;
-                if (transaction) {
+                const purchase = res.data.purchase;
+                if (purchase) {
                     if (barcodeInput.current) {
                         barcodeInput.current.disabled = false;
                     }
-                    // if (buttonTransaction.current) {
-                    //     buttonTransaction.current.disabled = true;
-                    // }
-
-                    setTransactions([
-                        {
-                            id: transaction.id,
-                            transaction_details: [],
-                            payment_method: null,
-                            subtotal: 0,
-                            ppn: 0,
-                            status: "process",
-                            total_payment: 0,
-                        },
-                    ]);
+                    setPurchase({
+                        id: purchase.id,
+                        supplier_id: "",
+                        purchase_details: [],
+                        payment_method: null,
+                        subtotal: 0,
+                        ppn: 0,
+                        status: "process",
+                        total_payment: 0,
+                    });
                 }
+
                 setLoading(false);
             } catch (error) {
                 setLoading(false);
             }
         } else {
-            setModalNotif(true);
-            setModalNotifText("Sorry, There is transaction on process");
+            Swal.fire({
+                buttonsStyling: false,
+                customClass: swalCustomClass,
+                icon: "info",
+                title: "Info",
+                text: "There is a purchase in progress. You can't create a new purchase",
+            });
         }
     };
 
@@ -89,82 +99,64 @@ export default function Index({ title, auth, flash }: PageProps) {
             const product = res.data.product;
 
             if (product) {
-                setTransactions((prevTransactions) => {
-                    const updatedTransactions = prevTransactions.map(
-                        (transaction) => {
-                            if (transaction.id) {
-                                const existingProductIndex =
-                                    transaction.transaction_details?.findIndex(
-                                        (detail) =>
-                                            detail.product.id === product.id
-                                    );
+                setPurchase((prevPurchase) => {
+                    if (!prevPurchase) return prevPurchase;
 
-                                if (
-                                    existingProductIndex !== undefined &&
-                                    existingProductIndex !== -1
-                                ) {
-                                    const updatedTransactionDetails = [
-                                        ...transaction.transaction_details,
-                                    ];
-                                    updatedTransactionDetails[
-                                        existingProductIndex
-                                    ].quantity += 1;
-                                    updatedTransactionDetails[
-                                        existingProductIndex
-                                    ].total_price = calculateTotalPrice(
-                                        updatedTransactionDetails[
-                                            existingProductIndex
-                                        ].price,
-                                        updatedTransactionDetails[
-                                            existingProductIndex
-                                        ].quantity,
-                                        updatedTransactionDetails[
-                                            existingProductIndex
-                                        ].discount
-                                    );
+                    const existingProductIndex =
+                        prevPurchase.purchase_details.findIndex(
+                            (d) => d.product.id === product.id
+                        );
 
-                                    return {
-                                        ...transaction,
-                                        transaction_details:
-                                            updatedTransactionDetails,
-                                    };
-                                } else {
-                                    const newTransactionDetail: TransactionDetail =
-                                        {
-                                            id: product.id,
-                                            quantity: 1,
-                                            discount: product.discount,
-                                            price: product.price,
-                                            total_price: calculateTotalPrice(
-                                                product.price,
-                                                1,
-                                                product.discount
-                                            ),
-                                            product: product,
-                                        };
+                    if (existingProductIndex !== -1) {
+                        // Update existing product details
+                        const updatedPurchaseDetails = [
+                            ...prevPurchase.purchase_details,
+                        ];
+                        updatedPurchaseDetails[
+                            existingProductIndex
+                        ].quantity += 1;
+                        updatedPurchaseDetails[
+                            existingProductIndex
+                        ].total_price = calculateTotalPrice(
+                            updatedPurchaseDetails[existingProductIndex].price,
+                            updatedPurchaseDetails[existingProductIndex]
+                                .quantity,
+                            updatedPurchaseDetails[existingProductIndex]
+                                .discount
+                        );
 
-                                    return {
-                                        ...transaction,
-                                        transaction_details: [
-                                            ...(transaction.transaction_details ||
-                                                []),
-                                            newTransactionDetail,
-                                        ],
-                                    };
-                                }
-                            }
-                            return transaction;
-                        }
-                    );
+                        console.log("updated", updatedPurchaseDetails);
+                        return {
+                            ...prevPurchase,
+                            purchase_details: updatedPurchaseDetails,
+                        };
+                    } else {
+                        // Add new product details
+                        const newPurchaseDetail: TransactionDetail = {
+                            id: product.id,
+                            quantity: 1,
+                            discount: product.discount,
+                            price: product.price,
+                            total_price: calculateTotalPrice(
+                                product.price,
+                                1,
+                                product.discount
+                            ),
+                            product: product,
+                        };
 
-                    // Optionally update the transaction's total price, PPN, etc. here
-
-                    saveTransaction();
-
-                    return updatedTransactions;
+                        return {
+                            ...prevPurchase,
+                            purchase_details: [
+                                ...prevPurchase.purchase_details,
+                                newPurchaseDetail,
+                            ],
+                        };
+                    }
                 });
-            }
 
+                await savePurchase();
+            }
             if (barcodeInput.current) {
                 barcodeInput.current.value = "";
             }
@@ -173,83 +165,30 @@ export default function Index({ title, auth, flash }: PageProps) {
         }
     };
 
-    const saveTransaction = async () => {
-        if (transactionId) {
+    const savePurchase = async () => {
+        if (purchaseId) {
             try {
                 setLoading(true);
                 const res = await axios.post(
-                    route("transaction.cashier.store"),
+                    route("transaction.purchase-products.store"),
                     {
-                        transactions,
+                        purchase,
                     }
                 );
+                console.log(res);
                 setLoading(false);
             } catch (error) {
                 setLoading(false);
                 console.error("Error saving transaction:", error);
             }
         } else {
-            setModalNotif(true);
-            setModalNotifText(
-                "Sorry, There is no transaction on process or products list is empty"
-            );
-        }
-    };
-
-    const [modalHoldTransaction, setModalHoldTransaction] = useState(false);
-
-    const holdTransaction = async (id: any, status: string) => {
-        if (status == "hold" && !transactionId) {
-            setModalNotif(true);
-            setModalNotifText("Sorry, There is no transaction on process");
-        } else if (id) {
-            try {
-                setLoading(true);
-
-                const res = await axios.put(
-                    route("transaction.cashier.hold-transaction", id),
-                    {
-                        status: status,
-                        transactions,
-                    }
-                );
-                const transaction = res.data.transaction;
-                console.log(res.data.transaction);
-
-                if (transaction) {
-                    if (transaction.status == "process") {
-                        setTransactions([
-                            {
-                                id: transaction.id,
-                                transaction_details:
-                                    transaction.transaction_details,
-                                subtotal: transaction.total_price,
-                                ppn: transaction.ppn,
-                                payment_method: null,
-                                status: transaction.status,
-                                total_payment: transaction.total_payment,
-                            },
-                        ]);
-                        setOpenModalTableHoldTransaction(false);
-                        setModalSelectedDataHoldTransaction(false);
-                        if (barcodeInput.current) {
-                            barcodeInput.current.disabled = false;
-                        }
-                    } else {
-                        setTransactions([]);
-                        setModalHoldTransaction(false);
-
-                        if (barcodeInput.current) {
-                            barcodeInput.current.disabled = true;
-                        }
-                    }
-                }
-                // if()
-                setLoading(false);
-            } catch (error) {
-                setLoading(false);
-                console.error("Error saving transaction:", error);
-            }
+            Swal.fire({
+                buttonsStyling: false,
+                customClass: swalCustomClass,
+                icon: "info",
+                title: "Info",
+                text: "There is no purchase in progress",
+            });
         }
     };
 
@@ -265,138 +204,124 @@ export default function Index({ title, auth, flash }: PageProps) {
     };
 
     useEffect(() => {
-        const updatedTransactions = transactions.map((transaction) => {
-            const subtotal =
-                transaction.transaction_details?.reduce((total, detail) => {
-                    return total + (detail.total_price || 0);
-                }, 0) || 0;
+        if (!purchase) return;
 
-            const totalPPN = Math.round(subtotal * 0.1);
-            const totalPayment = Math.round(subtotal + totalPPN);
+        const subtotal =
+            purchase.purchase_details?.reduce((total, detail) => {
+                return total + (detail.total_price || 0);
+            }, 0) || 0;
 
-            return {
-                ...transaction,
-                subtotal: subtotal,
-                ppn: totalPPN,
-                total_payment: totalPayment,
-            };
-        });
+        const totalPPN = Math.round(subtotal * 0.1);
+        const totalPayment = Math.round(subtotal + totalPPN);
 
+        // Pastikan bahwa hanya mengubah purchase jika ada perubahan
         if (
-            JSON.stringify(transactions) !== JSON.stringify(updatedTransactions)
+            purchase.subtotal !== subtotal ||
+            purchase.ppn !== totalPPN ||
+            purchase.total_payment !== totalPayment
         ) {
-            setTransactions(updatedTransactions);
+            setPurchase((prevPurchase) => {
+                if (!prevPurchase) return prevPurchase;
+
+                return {
+                    ...prevPurchase,
+                    subtotal: subtotal,
+                    ppn: totalPPN,
+                    total_payment: totalPayment,
+                };
+            });
         }
-    }, [transactions]);
+    }, [purchase]);
 
     const columns: TableColumn<HoldTransaction>[] = [
         {
-            name: "Transaction ID",
+            name: "Uniq Code",
             selector: (row: HoldTransaction) => row.id,
             sortable: true,
         },
         {
-            name: "Status",
+            name: "Supplier Name",
             selector: (row: HoldTransaction) => row.status,
-            sortable: true,
-        },
-        {
-            name: "Created At",
-            selector: (row: HoldTransaction) =>
-                format(new Date(row.created_at), "yyyy-MM-dd HH:mm:ss"),
-            sortable: true,
-        },
-        {
-            name: "Updated At",
-            selector: (row: HoldTransaction) =>
-                format(new Date(row.updated_at), "yyyy-MM-dd HH:mm:ss"),
             sortable: true,
         },
     ];
 
-    const listHoldTransaction = async () => {
-        if (!transactionId) {
-            try {
-                const res = await axios.get(
-                    route("transaction.cashier.get-data-transactions", "hold")
-                );
-                const transactions = res.data.transactions;
-                if (transactions) {
-                    setHoldTransactions(transactions);
-                }
+    const [supplierIdToSave, setSupplierIdToSave] = useState<string | null>(
+        null
+    );
 
-                setOpenModalTableHoldTransaction(true);
-            } catch (error) {
-                console.log(error);
+    const [paymentMethod, setPaymentMethod] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (supplierIdToSave !== null) {
+            const save = async () => {
+                await savePurchase();
+                setSupplierIdToSave(null);
+            };
+
+            save();
+        }
+    }, [supplierIdToSave]);
+
+    useEffect(() => {
+        if (paymentMethod !== null) {
+            const save = async () => {
+                await savePurchase();
+                setPaymentMethod(null);
+            };
+
+            save();
+        }
+    }, [paymentMethod]);
+
+    useEffect(() => {
+        const save = async () => {
+            if (
+                purchaseId &&
+                purchase &&
+                purchase.purchase_details &&
+                purchase.purchase_details.length > 0
+            ) {
+                await savePurchase();
             }
-        } else {
-            setModalNotif(true);
-            setModalNotifText("Sorry, There is transaction on process");
-        }
-    };
+        };
 
-    const [tableHoldTransactionId, setTableHoldTransactionId] = useState<
-        string | null
-    >(null);
+        save();
+    }, [purchase]);
 
-    const [
-        modalSelectDataHoldTransaction,
-        setModalSelectedDataHoldTransaction,
-    ] = useState(false);
-
-    const doubleClickHandleTableHoldTransaction = (row: any) => {
-        if (row.id) {
-            setTableHoldTransactionId(row.id);
-            setModalSelectedDataHoldTransaction(true);
-        }
-    };
-
-    const printReceipt = async () => {
+    const submitPurchase = async () => {
         if (
-            transactionId &&
-            transactions.length > 0 &&
-            transactions.some((t) => t.transaction_details?.length > 0)
+            purchaseId &&
+            purchase &&
+            purchase?.purchase_details &&
+            purchase.purchase_details.length > 0
         ) {
-            const url = route("transaction.cashier.print", {
-                id: transactionId,
-            });
+            try {
+                setLoading(true);
+                const res = await axios.post(
+                    route("transaction.purchase-products.submit"),
+                    {
+                        purchase,
+                    }
+                );
 
-            await holdTransaction(transactionId, "completed");
-
-            window.open(url, "_blank");
-        } else {
-            setModalNotif(true);
-            setModalNotifText(
-                "Sorry, There is no transaction on process or product list is empty"
-            );
-        }
-    };
-
-    const [searchKeyword, setSearchKeyword] = useState("");
-
-    const searchHoldTransaction = async (keyword: any) => {
-        try {
-            const res = await axios.get(
-                route("transaction.cashier.get-data-transactions", "hold"),
-                {
-                    params: {
-                        keyword: keyword,
-                    },
+                if (res.status == 200) {
+                    setPurchase(undefined);
                 }
-            );
-            const transactions = res.data.transactions;
-            if (transactions) {
-                setHoldTransactions(transactions);
-            }
-        } catch (error) {
-            console.log(error);
-        }
-    };
 
-    const handleSearchChange = (e: any) => {
-        const keyword = e.target.value.toLowerCase().trim();
-        setSearchKeyword(keyword);
-        searchHoldTransaction(keyword);
+                setLoading(false);
+            } catch (error) {
+                setLoading(false);
+            }
+        } else {
+            Swal.fire({
+                buttonsStyling: false,
+                customClass: swalCustomClass,
+                icon: "info",
+                title: "Info",
+                text: "There is no purchase in progress or products list is empty",
+            });
+        }
     };
 
     return (
@@ -411,177 +336,45 @@ export default function Index({ title, auth, flash }: PageProps) {
         >
             <Head title={title} />
 
-            <Modal
-                dismissible
-                show={modalNotif}
-                size="sm"
-                onClose={() => setModalNotif(false)}
-                popup
-                className={`animate-fadeIn duration-300 ${
-                    modalNotif ? "opacity-100" : "opacity-0 pointer-events-none"
-                }`}
-            >
-                <Modal.Header></Modal.Header>
-                <Modal.Body>
-                    <div className="text-center">
-                        <HiOutlineExclamationCircle className="mx-auto mb-4 h-14 w-14 text-gray-400 dark:text-gray-200" />
-                        {modalNotifText && (
-                            <h3 className="mb-5 text-lg font-normal text-gray-500 dark:text-gray-400">
-                                {modalNotifText}
-                            </h3>
-                        )}
-                    </div>
-                </Modal.Body>
-            </Modal>
-
             <div className="p-7 border border-gray-200 dark:border-gray-700 shadow-lg rounded-lg">
                 <div className="flex justify-between">
                     <h1 className="dark:text-white text-lg">{title}</h1>
                     <div className="flex">
-                        <Button
-                            onClick={() => listHoldTransaction()}
-                            disabled={loading}
+                        <Select
+                            value={purchase?.supplier_id}
+                            onChange={(e) => {
+                                setPurchase((prevPurchase) => {
+                                    if (!prevPurchase) return prevPurchase;
+
+                                    return {
+                                        ...prevPurchase,
+                                        supplier_id: e.target.value,
+                                    };
+                                });
+
+                                setSupplierIdToSave(e.target.value);
+                            }}
                         >
-                            {loading ? (
-                                <ClipLoader size={20} />
-                            ) : (
-                                "List Hold Transaction"
-                            )}
-                        </Button>
+                            <option value="">Select supplier</option>
+                            {suppliers.map((value) => (
+                                <option key={value.id} value={value.id}>
+                                    {value.supplier_name}
+                                </option>
+                            ))}
+                        </Select>
                         <Button
                             className="ms-3"
                             ref={buttonTransaction}
-                            onClick={() => newTransaction()}
+                            onClick={() => newPurchase()}
                         >
                             {loading ? (
                                 <ClipLoader size={20} />
                             ) : (
-                                "New Transaction"
+                                "Add Stock Products"
                             )}
                         </Button>
                     </div>
                 </div>
-
-                <Modal
-                    dismissible
-                    show={modalSelectDataHoldTransaction}
-                    size="md"
-                    onClose={() => setModalSelectedDataHoldTransaction(false)}
-                    popup
-                >
-                    <Modal.Header></Modal.Header>
-                    <Modal.Body>
-                        <div className="text-center">
-                            <HiOutlineExclamationCircle className="mx-auto mb-4 h-14 w-14 text-gray-400 dark:text-gray-200" />
-                            <h3 className="mb-5 text-lg font-normal text-gray-500 dark:text-gray-400">
-                                Are you sure you want to select this data?
-                            </h3>
-                            <div className="flex justify-center gap-4">
-                                <Button
-                                    onClick={() =>
-                                        holdTransaction(
-                                            tableHoldTransactionId,
-                                            "process"
-                                        )
-                                    }
-                                    disabled={loading}
-                                >
-                                    {loading ? (
-                                        <ClipLoader size={20} />
-                                    ) : (
-                                        "Yes, I'm sure"
-                                    )}
-                                </Button>
-                                <Button
-                                    color="gray"
-                                    onClick={() =>
-                                        setModalSelectedDataHoldTransaction(
-                                            false
-                                        )
-                                    }
-                                >
-                                    No, cancel
-                                </Button>
-                            </div>
-                        </div>
-                    </Modal.Body>
-                </Modal>
-
-                <Modal
-                    dismissible
-                    show={modalHoldTransaction}
-                    size="md"
-                    onClose={() => setModalHoldTransaction(false)}
-                    popup
-                >
-                    <Modal.Header></Modal.Header>
-                    <Modal.Body>
-                        <div className="text-center">
-                            <HiOutlineExclamationCircle className="mx-auto mb-4 h-14 w-14 text-gray-400 dark:text-gray-200" />
-                            <h3 className="mb-5 text-lg font-normal text-gray-500 dark:text-gray-400">
-                                Are you sure you want to hold this transaction?
-                            </h3>
-                            <div className="flex justify-center gap-4">
-                                <Button
-                                    onClick={() =>
-                                        holdTransaction(transactionId, "hold")
-                                    }
-                                    disabled={loading}
-                                >
-                                    {loading ? (
-                                        <ClipLoader size={20} />
-                                    ) : (
-                                        "Yes, I'm sure"
-                                    )}
-                                </Button>
-                                <Button
-                                    color="gray"
-                                    onClick={() =>
-                                        setModalHoldTransaction(false)
-                                    }
-                                >
-                                    No, cancel
-                                </Button>
-                            </div>
-                        </div>
-                    </Modal.Body>
-                </Modal>
-
-                <Modal
-                    show={openModalTableHoldTransaction}
-                    onClose={() => setOpenModalTableHoldTransaction(false)}
-                    size="xlg"
-                >
-                    <Modal.Header>
-                        <p>List Hold Transaction</p>
-                    </Modal.Header>
-                    <Modal.Body>
-                        <FloatingLabel
-                            variant="outlined"
-                            onChange={handleSearchChange}
-                            label="search..."
-                        />
-                        <DataTable
-                            highlightOnHover
-                            persistTableHead
-                            columns={columns}
-                            data={holdtransactions}
-                            onRowDoubleClicked={
-                                doubleClickHandleTableHoldTransaction
-                            }
-                        />
-                    </Modal.Body>
-                    <Modal.Footer>
-                        <Button
-                            color="gray"
-                            onClick={() =>
-                                setOpenModalTableHoldTransaction(false)
-                            }
-                        >
-                            Close
-                        </Button>
-                    </Modal.Footer>
-                </Modal>
 
                 <div className="mt-5">
                     <Label htmlFor="barcode" value="Barcode" />
@@ -603,148 +396,125 @@ export default function Index({ title, auth, flash }: PageProps) {
                             <Table.HeadCell>Total</Table.HeadCell>
                         </Table.Head>
                         <Table.Body className="divide-y">
-                            {transactions.map((transaction) =>
-                                transaction.transaction_details?.map(
-                                    (detail: TransactionDetail, index) => (
-                                        <Table.Row
-                                            key={detail.id}
-                                            className="bg-white dark:border-gray-700 dark:bg-gray-800"
-                                        >
-                                            <Table.Cell>
-                                                {detail.product?.product_name}
-                                            </Table.Cell>
-                                            <Table.Cell>
-                                                {
-                                                    detail.product?.category
-                                                        ?.category_name
-                                                }
-                                            </Table.Cell>
-                                            <Table.Cell>
+                            {purchase?.purchase_details?.map(
+                                (detail: TransactionDetail, index) => (
+                                    <Table.Row
+                                        key={detail.id}
+                                        className="bg-white dark:border-gray-700 dark:bg-gray-800"
+                                    >
+                                        <Table.Cell>
+                                            {detail.product?.product_name}
+                                        </Table.Cell>
+                                        <Table.Cell>
+                                            {
+                                                detail.product?.category
+                                                    ?.category_name
+                                            }
+                                        </Table.Cell>
+                                        <Table.Cell>
+                                            <TextInput
+                                                type="number"
+                                                value={detail.quantity.toString()}
+                                                onChange={(e) => {
+                                                    const updatedPurchaseDetails =
+                                                        [
+                                                            ...(purchase.purchase_details ||
+                                                                []),
+                                                        ];
+                                                    updatedPurchaseDetails[
+                                                        index
+                                                    ].quantity = parseInt(
+                                                        e.target.value
+                                                    );
+                                                    updatedPurchaseDetails[
+                                                        index
+                                                    ].total_price =
+                                                        calculateTotalPrice(
+                                                            updatedPurchaseDetails[
+                                                                index
+                                                            ].price,
+                                                            updatedPurchaseDetails[
+                                                                index
+                                                            ].quantity,
+                                                            updatedPurchaseDetails[
+                                                                index
+                                                            ].discount
+                                                        );
+
+                                                    setPurchase(
+                                                        (prevPurchase) => {
+                                                            if (!prevPurchase)
+                                                                return prevPurchase;
+
+                                                            return {
+                                                                ...prevPurchase,
+                                                                purchase_details:
+                                                                    updatedPurchaseDetails,
+                                                            };
+                                                        }
+                                                    );
+                                                }}
+                                            />
+                                        </Table.Cell>
+                                        <Table.Cell>
+                                            {formatRupiah(detail.price)}
+                                        </Table.Cell>
+                                        <Table.Cell>
+                                            {loading ? (
+                                                <BeatLoader />
+                                            ) : (
                                                 <TextInput
                                                     type="number"
-                                                    value={detail.quantity.toString()}
-                                                    onChange={async (e) => {
-                                                        const updatedTransactionDetails =
+                                                    value={detail.discount.toString()}
+                                                    onChange={(e) => {
+                                                        const updatedPurchaseDetails =
                                                             [
-                                                                ...(transaction.transaction_details ||
+                                                                ...(purchase.purchase_details ||
                                                                     []),
                                                             ];
-                                                        updatedTransactionDetails[
+                                                        updatedPurchaseDetails[
                                                             index
-                                                        ].quantity = parseInt(
+                                                        ].discount = parseInt(
                                                             e.target.value
                                                         );
-                                                        updatedTransactionDetails[
+                                                        updatedPurchaseDetails[
                                                             index
                                                         ].total_price =
                                                             calculateTotalPrice(
-                                                                updatedTransactionDetails[
+                                                                updatedPurchaseDetails[
                                                                     index
                                                                 ].price,
-                                                                updatedTransactionDetails[
+                                                                updatedPurchaseDetails[
                                                                     index
                                                                 ].quantity,
-                                                                updatedTransactionDetails[
+                                                                updatedPurchaseDetails[
                                                                     index
                                                                 ].discount
                                                             );
 
-                                                        setTransactions(
-                                                            (
-                                                                prevTransactions
-                                                            ) =>
-                                                                prevTransactions.map(
-                                                                    (t) => {
-                                                                        if (
-                                                                            t.id ===
-                                                                            transaction.id
-                                                                        ) {
-                                                                            return {
-                                                                                ...t,
-                                                                                products:
-                                                                                    updatedTransactionDetails,
-                                                                            };
-                                                                        }
-                                                                        return t;
-                                                                    }
+                                                        setPurchase(
+                                                            (prevPurchase) => {
+                                                                if (
+                                                                    !prevPurchase
                                                                 )
-                                                        );
+                                                                    return prevPurchase;
 
-                                                        await saveTransaction();
+                                                                return {
+                                                                    ...prevPurchase,
+                                                                    purchase_details:
+                                                                        updatedPurchaseDetails,
+                                                                };
+                                                            }
+                                                        );
                                                     }}
                                                 />
-                                            </Table.Cell>
-                                            <Table.Cell>
-                                                {formatRupiah(detail.price)}
-                                            </Table.Cell>
-                                            <Table.Cell>
-                                                {loading ? (
-                                                    <BeatLoader />
-                                                ) : (
-                                                    <TextInput
-                                                        type="number"
-                                                        value={detail.discount.toString()}
-                                                        onChange={async (e) => {
-                                                            const updatedTransactionDetails =
-                                                                [
-                                                                    ...(transaction.transaction_details ||
-                                                                        []),
-                                                                ];
-                                                            updatedTransactionDetails[
-                                                                index
-                                                            ].discount =
-                                                                parseInt(
-                                                                    e.target
-                                                                        .value
-                                                                );
-                                                            updatedTransactionDetails[
-                                                                index
-                                                            ].total_price =
-                                                                calculateTotalPrice(
-                                                                    updatedTransactionDetails[
-                                                                        index
-                                                                    ].price,
-                                                                    updatedTransactionDetails[
-                                                                        index
-                                                                    ].quantity,
-                                                                    updatedTransactionDetails[
-                                                                        index
-                                                                    ].discount
-                                                                );
-
-                                                            setTransactions(
-                                                                (
-                                                                    prevTransactions
-                                                                ) =>
-                                                                    prevTransactions.map(
-                                                                        (t) => {
-                                                                            if (
-                                                                                t.id ===
-                                                                                transaction.id
-                                                                            ) {
-                                                                                return {
-                                                                                    ...t,
-                                                                                    products:
-                                                                                        updatedTransactionDetails,
-                                                                                };
-                                                                            }
-                                                                            return t;
-                                                                        }
-                                                                    )
-                                                            );
-
-                                                            await saveTransaction();
-                                                        }}
-                                                    />
-                                                )}
-                                            </Table.Cell>
-                                            <Table.Cell>
-                                                {formatRupiah(
-                                                    detail.total_price
-                                                ) || 0}
-                                            </Table.Cell>
-                                        </Table.Row>
-                                    )
+                                            )}
+                                        </Table.Cell>
+                                        <Table.Cell>
+                                            {formatRupiah(detail.total_price) ||
+                                                0}
+                                        </Table.Cell>
+                                    </Table.Row>
                                 )
                             )}
                         </Table.Body>
@@ -752,72 +522,56 @@ export default function Index({ title, auth, flash }: PageProps) {
                 </div>
 
                 <div className="mt-5">
-                    {transactions.map((transaction: Transaction, index) => (
-                        <div
-                            key={transaction.id}
-                            className="border border-gray-300 p-4 rounded-lg"
-                        >
-                            <h3 className="text-lg font-semibold mb-2">
-                                Summary
-                            </h3>
-                            <div className="flex justify-between mb-1">
-                                <span>Transaction ID:</span>
-                                <span>{transaction.id}</span>
-                            </div>
-                            <div className="flex justify-between mb-1">
-                                <span>Sub Total:</span>
-                                <span>
-                                    {formatRupiah(transaction.subtotal)}
-                                </span>
-                            </div>
-                            <div className="flex justify-between mb-1">
-                                <span>PPN (10%):</span>
-                                <span>{formatRupiah(transaction.ppn)}</span>
-                            </div>
-                            <div className="flex justify-between mb-1">
-                                <span>Payment Method:</span>
-                                <span>
-                                    <Select
-                                        value={transaction.payment_method}
-                                        onChange={async (e) => {
-                                            console.log(e.target.value);
-                                            const updatedTransactions =
-                                                transactions.map((trans) => {
-                                                    if (
-                                                        trans.id ===
-                                                        transaction.id
-                                                    ) {
-                                                        return {
-                                                            ...trans,
-                                                            payment_method:
-                                                                e.target.value,
-                                                        };
-                                                    }
-                                                    return trans;
-                                                });
-
-                                            await setTransactions(
-                                                updatedTransactions
-                                            );
-
-                                            await saveTransaction();
-                                        }}
-                                    >
-                                        <option value="">Select</option>
-                                        <option value="cash">Cash</option>
-                                        <option value="credit">Credit</option>
-                                    </Select>
-                                </span>
-                            </div>
-                            <hr className="my-2" />
-                            <div className="flex justify-between font-semibold">
-                                <span>Total Payment:</span>
-                                <span>
-                                    {formatRupiah(transaction.total_payment)}
-                                </span>
-                            </div>
+                    <div
+                        key={purchase?.id}
+                        className="border border-gray-300 p-4 rounded-lg"
+                    >
+                        <h3 className="text-lg font-semibold mb-2">Summary</h3>
+                        <div className="flex justify-between mb-1">
+                            <span>Purchase ID:</span>
+                            <span>{purchase?.id}</span>
                         </div>
-                    ))}
+                        <div className="flex justify-between mb-1">
+                            <span>Sub Total:</span>
+                            <span>{formatRupiah(purchase?.subtotal)}</span>
+                        </div>
+                        <div className="flex justify-between mb-1">
+                            <span>PPN (10%):</span>
+                            <span>{formatRupiah(purchase?.ppn)}</span>
+                        </div>
+                        <div className="flex justify-between mb-1">
+                            <span>Payment Method:</span>
+                            <span>
+                                <Select
+                                    value={purchase?.payment_method}
+                                    onChange={async (e) => {
+                                        console.log(e.target.value);
+
+                                        setPurchase((prevPurchase) => {
+                                            if (!prevPurchase)
+                                                return prevPurchase;
+
+                                            return {
+                                                ...prevPurchase,
+                                                payment_method: e.target.value,
+                                            };
+                                        });
+
+                                        setPaymentMethod(e.target.value);
+                                    }}
+                                >
+                                    <option value="">Select</option>
+                                    <option value="cash">Cash</option>
+                                    <option value="credit">Credit</option>
+                                </Select>
+                            </span>
+                        </div>
+                        <hr className="my-2" />
+                        <div className="flex justify-between font-semibold">
+                            <span>Total Payment:</span>
+                            <span>{formatRupiah(purchase?.total_payment)}</span>
+                        </div>
+                    </div>
                 </div>
                 <div className="mt-5 flex justify-between">
                     <span>Action</span>
@@ -827,17 +581,9 @@ export default function Index({ title, auth, flash }: PageProps) {
                         ) : (
                             <>
                                 <Button
-                                    color="failure"
-                                    onClick={() =>
-                                        setModalHoldTransaction(true)
-                                    }
-                                >
-                                    Hold
-                                </Button>
-                                <Button
+                                    onClick={() => submitPurchase()}
                                     color="success"
                                     className="ms-3"
-                                    onClick={() => printReceipt()}
                                 >
                                     Submit
                                 </Button>
