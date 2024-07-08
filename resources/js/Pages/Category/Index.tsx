@@ -8,6 +8,8 @@ import { HiOutlinePlus, HiOutlineExclamationCircle } from "react-icons/hi";
 import { format } from "date-fns";
 import DataTable, { TableColumn } from "react-data-table-component";
 import { ClipLoader } from "react-spinners";
+import Swal from "sweetalert2";
+import { classCustomSwal } from "@/utils/Utils";
 
 export default function Index({
     title,
@@ -93,16 +95,37 @@ export default function Index({
         });
     };
 
-    const deleteData = async () => {
-        if (categoryToDelete) {
-            destroy(
-                route("master.categories.destroy", { id: categoryToDelete }),
-                {
-                    onSuccess: () => closeModal(),
-                    onFinish: () => reset(),
-                }
-            );
-        }
+    const deleteData = async (id: string) => {
+        Swal.fire({
+            buttonsStyling: false,
+            customClass: classCustomSwal,
+            title: "Delete",
+            text: "Are you sure want to delete data?",
+            icon: "warning",
+            showCancelButton: true,
+            showConfirmButton: true,
+            confirmButtonText: "Yes, delete it!",
+            confirmButtonColor: "#3085d6",
+        }).then((result) => {
+            if (result.isConfirmed) {
+                destroy(
+                    route("master.categories.destroy", {
+                        id: categoryToDelete,
+                    }),
+                    {
+                        onSuccess: () => reset(),
+                    }
+                );
+            } else {
+                Swal.fire({
+                    buttonsStyling: false,
+                    customClass: classCustomSwal,
+                    icon: "info",
+                    title: "info",
+                    text: "Your data is safe!",
+                });
+            }
+        });
     };
 
     const confirmDataDeletion = (id: string) => {
@@ -169,7 +192,7 @@ export default function Index({
                         Edit
                     </button>
                     <button
-                        onClick={() => confirmDataDeletion(row.id)}
+                        onClick={() => deleteData(row.id)}
                         className="font-medium text-red-500 hover:underline dark:text-red-300"
                         disabled={processing}
                     >
@@ -288,37 +311,6 @@ export default function Index({
                             Close
                         </Button>
                     </Modal.Footer>
-                </Modal>
-
-                <Modal
-                    size="md"
-                    show={confirmingDataDeletion}
-                    onClose={closeModal}
-                >
-                    <Modal.Body>
-                        <div className="text-center">
-                            <HiOutlineExclamationCircle className="mx-auto mb-4 h-14 w-14 text-gray-400 dark:text-gray-200" />
-                            <h3 className="mb-5 text-lg font-normal text-gray-500 dark:text-gray-400">
-                                Are you sure you want to delete this data?
-                            </h3>
-                            <div className="flex justify-center gap-4">
-                                <Button
-                                    color="failure"
-                                    onClick={deleteData}
-                                    disabled={processing}
-                                >
-                                    {processing ? (
-                                        <ClipLoader size={20} />
-                                    ) : (
-                                        "Yes, I'm sure"
-                                    )}
-                                </Button>
-                                <Button color="gray" onClick={closeModal}>
-                                    No, cancel
-                                </Button>
-                            </div>
-                        </div>
-                    </Modal.Body>
                 </Modal>
 
                 <div className="overflow-x-auto">

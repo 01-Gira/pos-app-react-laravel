@@ -7,6 +7,8 @@ import DataTable, { TableColumn } from "react-data-table-component";
 import { HiOutlinePlus, HiOutlineExclamationCircle } from "react-icons/hi";
 import { format } from "date-fns";
 import { ClipLoader } from "react-spinners";
+import Swal from "sweetalert2";
+import { classCustomSwal } from "@/utils/Utils";
 
 export default function Index({
     title,
@@ -58,15 +60,39 @@ export default function Index({
 
     const [productId, setProductId] = useState<string | null>(null);
 
-    const deleteData = async () => {
-        if (productId) {
-            destroy(route("master.products.destroy", { product: productId }), {
-                onSuccess: () => {
-                    setModalDelete(false);
-                    reset();
-                },
-            });
-        }
+    const deleteData = async (id: string) => {
+        Swal.fire({
+            buttonsStyling: false,
+            customClass: classCustomSwal,
+            title: "Delete",
+            text: "Are you sure want to delete data?",
+            icon: "warning",
+            showCancelButton: true,
+            showConfirmButton: true,
+            confirmButtonText: "Yes, delete it!",
+            confirmButtonColor: "#3085d6",
+        }).then((result) => {
+            if (result.isConfirmed) {
+                destroy(
+                    route("master.products.destroy", {
+                        product: id,
+                    }),
+                    {
+                        onSuccess: () => {
+                            reset();
+                        },
+                    }
+                );
+            } else {
+                Swal.fire({
+                    buttonsStyling: false,
+                    customClass: classCustomSwal,
+                    icon: "info",
+                    title: "info",
+                    text: "Your data is safe!",
+                });
+            }
+        });
     };
 
     const {
@@ -175,7 +201,7 @@ export default function Index({
                         Discount
                     </button>
                     <button
-                        onClick={() => confirmDataDeletion(row.id)}
+                        onClick={() => deleteData(row.id)}
                         className="font-medium text-red-500 hover:underline dark:text-red-300"
                     >
                         Delete
@@ -274,7 +300,7 @@ export default function Index({
                             <div className="flex justify-center gap-4">
                                 <Button
                                     color="failure"
-                                    onClick={() => deleteData()}
+                                    // onClick={() => deleteData()}
                                     disabled={processing}
                                 >
                                     {processing ? (

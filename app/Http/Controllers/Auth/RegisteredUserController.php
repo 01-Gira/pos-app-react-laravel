@@ -36,10 +36,6 @@ class RegisteredUserController extends Controller
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
 
-        $request->merge([
-            'phone_no' => preg_replace('/^0/', '+62', $request->input('phone_no')),
-        ]);
-
         $validated['store'] = $request->validate([
             'store_name' => 'required|string|max:255|:unique:'.Store::class,
             'phone_no' => 'required|min:12|max:14',

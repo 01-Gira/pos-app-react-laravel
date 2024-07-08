@@ -9,4 +9,6 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 class PurchaseDetail extends Model
 {
     use HasFactory, HasUuids;
+
+    protected $fillable = ['purchase_id', 'product_id', 'quantity', 'discount', 'price', 'total_price'];
 }

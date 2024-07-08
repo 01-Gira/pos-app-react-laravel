@@ -49,6 +49,17 @@ export interface Transaction {
     total_payment: number;
 }
 
+export interface Purchase {
+    id: string;
+    supplier_id: string;
+    purchase_details: TransactionDetail[];
+    payment_method: any;
+    subtotal: number;
+    ppn: number;
+    status: string;
+    total_payment: number;
+}
+
 export interface HoldTransaction {
     id: string;
     status: string;
@@ -68,6 +79,7 @@ export interface Supplier {
     id: string;
     uniq_code: string;
     supplier_name: string;
+    phone_no: number;
     address: string;
     created_at: Date;
     updated_at: Date;
@@ -103,6 +115,7 @@ export type PageProps<
     auth: {
         user: User;
     };
+    purchase: Purchase;
     transaction: Transaction;
     products: Product[];
     discounts: Discount[];

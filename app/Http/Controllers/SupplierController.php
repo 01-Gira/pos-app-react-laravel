@@ -70,6 +70,7 @@ class SupplierController extends Controller
     {
         $validated = $request->validate([
             'uniq_code' => 'required|string|max:225',
+            'phone_no' => 'required|min:12|max:14',
             'supplier_name' => 'required|max:255',
             'address' => 'required|max:255'
         ]);

@@ -10,4 +10,7 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 class Purchase extends Model
 {
     use HasFactory, HasUuids;
+
+    protected $fillable = ['purchase_date', 'supplier_id','payment_method', 'total_amount', 'ppn'];
+
 }

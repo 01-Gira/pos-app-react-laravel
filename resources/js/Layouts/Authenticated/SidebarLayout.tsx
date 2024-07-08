@@ -3,6 +3,7 @@ import { useLocation } from "react-router-dom"; // Menggunakan React Router
 
 import { Sidebar } from "flowbite-react";
 import {
+    HiDocument,
     HiOutlineMinusSm,
     HiOutlinePlusSm,
     HiChartPie,
@@ -81,7 +82,11 @@ export default function SidebarLayout({
                             >
                                 Cashier
                             </Sidebar.Item>
-                            <Sidebar.Item href="/purchase">
+                            <Sidebar.Item
+                                href={route(
+                                    "transaction.purchase-products.index"
+                                )}
+                            >
                                 Purchase Product
                             </Sidebar.Item>
                         </Sidebar.Collapse>
@@ -139,6 +144,39 @@ export default function SidebarLayout({
                                 href={route("master.suppliers.index")}
                             >
                                 Supplier
+                            </Sidebar.Item>
+                        </Sidebar.Collapse>
+                        <Sidebar.Collapse
+                            icon={HiDocument}
+                            label="Report"
+                            open={route().current("report.*") ? true : false}
+                            renderChevronIcon={(theme, open) => (
+                                <HiOutlinePlusSm
+                                    aria-hidden
+                                    className={twMerge(
+                                        theme.label.icon.open[
+                                            open ? "on" : "off"
+                                        ]
+                                    )}
+                                />
+                            )}
+                        >
+                            <Sidebar.Item
+                                className={
+                                    route().current("report.cashier.*")
+                                        ? "bg-gray-300 text-black"
+                                        : ""
+                                }
+                                href={route("transaction.cashier.index")}
+                            >
+                                Cashier
+                            </Sidebar.Item>
+                            <Sidebar.Item
+                                href={route(
+                                    "transaction.purchase-products.index"
+                                )}
+                            >
+                                Purchase Product
                             </Sidebar.Item>
                         </Sidebar.Collapse>
                         <Sidebar.Collapse
