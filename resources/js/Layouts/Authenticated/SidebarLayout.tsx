@@ -163,13 +163,13 @@ export default function SidebarLayout({
                         >
                             <Sidebar.Item
                                 className={
-                                    route().current("report.cashier.*")
+                                    route().current("report.transactions.*")
                                         ? "bg-gray-300 text-black"
                                         : ""
                                 }
-                                href={route("transaction.cashier.index")}
+                                href={route("report.transactions.index")}
                             >
-                                Cashier
+                                Transactions
                             </Sidebar.Item>
                             <Sidebar.Item
                                 href={route(

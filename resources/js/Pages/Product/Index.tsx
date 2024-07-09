@@ -1,8 +1,8 @@
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import { PageProps, Product } from "@/types";
 import { Head, router, useForm } from "@inertiajs/react";
-import { Button, FloatingLabel, Label, Modal, TextInput } from "flowbite-react";
-import { useEffect, useState } from "react";
+import { Button, Datepicker, FloatingLabel, Label, Modal, Select, TextInput } from "flowbite-react";
+import { ChangeEvent, useEffect, useState } from "react";
 import DataTable, { TableColumn } from "react-data-table-component";
 import { HiOutlinePlus, HiOutlineExclamationCircle } from "react-icons/hi";
 import { format } from "date-fns";
@@ -17,10 +17,15 @@ export default function Index({
     pagination,
     search,
     flash,
+    start_date, end_date, status, categories
 }: PageProps) {
+    const [pending, setPending] = useState(false);
     const [currentPage, setCurrentPage] = useState(pagination.current_page);
     const [searchQuery, setSearchQuery] = useState(search || "");
     const [rowsPerPage, setRowsPerPage] = useState(pagination.per_page);
+    const [startDate, setStartDate] = useState(format(new Date(start_date), "yyyy-MM-dd"));
+    const [endDate, setEndDate] = useState(format(new Date(end_date), "yyyy-MM-dd"));
+    const [statusFilter, setStatusFilter] = useState(status || "");
 
     useEffect(() => {
         setCurrentPage(pagination.current_page);
@@ -33,8 +38,12 @@ export default function Index({
     const onPageChange = (page: number) => {
         router.get(
             route("master.products.index"),
-            { search: searchQuery, page },
-            { preserveState: true }
+            { search: searchQuery, page, start_date: startDate, end_date: endDate, status: statusFilter },
+            {
+                preserveState: true,
+                onStart:() => setPending(true),
+                onFinish:() => setPending(false)
+            }
         );
         setCurrentPage(page);
     };
@@ -43,20 +52,74 @@ export default function Index({
         setRowsPerPage(newRowsPerPage);
         router.get(
             route("master.products.index"),
-            { search: searchQuery, page, per_page: newRowsPerPage },
-            { preserveState: true }
+            { search: searchQuery, page, per_page: newRowsPerPage, start_date: startDate, end_date: endDate, status: statusFilter },
+            {
+                preserveState: true,
+                onStart:() => setPending(true),
+                onFinish:() => setPending(false)
+            }
         );
         setCurrentPage(page);
     };
 
-    const onSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const onSearchChange = (event: ChangeEvent<HTMLInputElement>) => {
         setSearchQuery(event.target.value);
         router.get(
             route("master.products.index"),
-            { search: event.target.value, page: 1 },
-            { preserveState: true }
+            { search: event.target.value, page: 1, start_date: startDate, end_date: endDate, status: statusFilter },
+            {
+                preserveState: true,
+                onStart:() => setPending(true),
+                onFinish:() => setPending(false)
+            }
         );
     };
+
+    const onStartDateChange = (date: Date | null) => {
+        if (date) {
+            const formattedDate = format(date, "yyyy-MM-dd");
+            setStartDate(formattedDate);
+            router.get(
+                route("master.products.index"),
+                { search: searchQuery, page: 1, start_date: formattedDate, end_date: endDate, status: statusFilter },
+                {
+                    preserveState: true,
+                    onStart:() => setPending(true),
+                    onFinish:() => setPending(false)
+                }
+            );
+        }
+    };
+
+    const onEndDateChange = (date: Date | null) => {
+        if (date) {
+            const formattedDate = format(date, "yyyy-MM-dd");
+            setEndDate(formattedDate);
+            router.get(
+                route("master.products.index"),
+                { search: searchQuery, page: 1, start_date: startDate, end_date: formattedDate, status: statusFilter },
+                {
+                    preserveState: true,
+                    onStart:() => setPending(true),
+                    onFinish:() => setPending(false)
+                }
+            );
+        }
+    };
+
+    const onStatusChange = (event: ChangeEvent<HTMLSelectElement>) => {
+        setStatusFilter(event.target.value);
+        router.get(
+            route("master.products.index"),
+            { search: searchQuery, page: 1, start_date: startDate, end_date: endDate, status: event.target.value },
+              {
+                preserveState: true,
+                onStart:() => setPending(true),
+                onFinish:() => setPending(false)
+            }
+        );
+    };
+
 
     const [productId, setProductId] = useState<string | null>(null);
 
@@ -109,20 +172,8 @@ export default function Index({
         discount: 0,
     });
 
-    const confirmDataDeletion = (id: string) => {
-        setProductId(id);
-
-        setModalDelete(true);
-    };
-
     const [openModalDiscount, setModalDiscount] = useState(false);
     const [openModalDelete, setModalDelete] = useState(false);
-    const [selectedProductId, setSelectedProductId] = useState<string | null>(
-        null
-    );
-    const [selectedProductDiscount, setSelectedProductDiscount] = useState<
-        number | 0
-    >(0);
 
     const addDiscountToProduct = (id: string, discount: number) => {
         setProductId(id);
@@ -224,7 +275,41 @@ export default function Index({
             <Head title={title} />
             <div className="p-7 border border-gray-200 dark:border-gray-700 shadow-lg rounded-lg">
                 <h1 className="dark:text-white text-lg">{title}</h1>
-
+                <div className="grid grid-cols-3 gap-4 mt-5 mb-5">
+                    <div>
+                        <Label
+                            htmlFor="start_date"
+                            value="Start Date"
+                        />
+                        <Datepicker
+                            id="start_date"
+                            onSelectedDateChanged={date => onStartDateChange(date)}
+                            value={startDate}
+                        />
+                    </div>
+                    <div>
+                        <Label htmlFor="end_date" value="End Date" />
+                        <Datepicker
+                            id="end_date"
+                            onSelectedDateChanged={date => onEndDateChange(date)}
+                            value={endDate}
+                        />
+                    </div>
+                    <div>
+                        <Label htmlFor="status" value="Status" />
+                        <Select
+                            id="status"
+                            value={statusFilter}
+                            onChange={onStatusChange}
+                            required
+                        >
+                            <option value="">Select</option>
+                            {categories && categories.map((value) => (
+                                <option key={value.id} value={value.id}>{value.category_name}</option>
+                            ))}
+                        </Select>
+                    </div>
+                </div>
                 <div className="flex justify-between items-center space-x-2">
                     <Button
                         href={route("master.products.create")}
@@ -334,6 +419,7 @@ export default function Index({
                         onChangeRowsPerPage={onRowsPerPageChange}
                         highlightOnHover
                         persistTableHead
+                        progressPending={pending}
                     />
                 </div>
             </div>

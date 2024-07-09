@@ -9,6 +9,7 @@ use Inertia\Response;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Http\RedirectResponse;
+use Carbon\Carbon;
 
 class CategoryController extends Controller
 {
@@ -18,11 +19,21 @@ class CategoryController extends Controller
     public function index(Request $request)
     {
         $search = $request->input('search');
+        $startDate = $request->input('start_date');
+        $startDate = empty($startDate) ? Carbon::now()->firstOfMonth()->format('Y-m-d') : $startDate;
+        $endDate = $request->input('end_date');
+        $endDate = empty($endDate) ? Carbon::now()->endOfMonth()->format('Y-m-d') : $endDate;
         $perPage = $request->input('per_page', 5);
 
         $categories = Category::query()
             ->when($search, function ($query, $search) {
                 return $query->where('category_name', 'like', "%{$search}%");
+            })
+            ->when($startDate, function ($query, $startDate) {
+                return $query->whereDate('created_at', '>=', $startDate);
+            })
+            ->when($endDate, function ($query, $endDate) {
+                return $query->whereDate('created_at', '<=', $endDate);
             })
             ->orderByDesc('created_at')
             ->paginate($perPage);
@@ -38,6 +49,8 @@ class CategoryController extends Controller
                 'per_page' => $categories->perPage(),
             ],
             'search' => $search,
+            'start_date' => $startDate,
+            'end_date' => $endDate,
         ]);
     }
 

@@ -2,8 +2,8 @@ import InputError from "@/Components/InputError";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import { Category, PageProps } from "@/types";
 import { Head, router, useForm, usePage } from "@inertiajs/react";
-import { Button, FloatingLabel, Label, Modal, TextInput } from "flowbite-react";
-import { useEffect, useRef, useState } from "react";
+import { Button, Datepicker, FloatingLabel, Label, Modal, Select, TextInput } from "flowbite-react";
+import { ChangeEvent, useEffect, useRef, useState } from "react";
 import { HiOutlinePlus, HiOutlineExclamationCircle } from "react-icons/hi";
 import { format } from "date-fns";
 import DataTable, { TableColumn } from "react-data-table-component";
@@ -18,23 +18,22 @@ export default function Index({
     pagination,
     search,
     flash,
+    start_date,
+    end_date
 }: PageProps) {
-    // const { flash } = usePage().props;
-
+    const [pending, setPending] = useState(false);
     const [currentPage, setCurrentPage] = useState(pagination.current_page);
-    const [rowsPerPage, setRowsPerPage] = useState(pagination.per_page);
     const [searchQuery, setSearchQuery] = useState(search || "");
+    const [rowsPerPage, setRowsPerPage] = useState(pagination.per_page);
+    const [startDate, setStartDate] = useState(format(new Date(start_date), "yyyy-MM-dd"));
+    const [endDate, setEndDate] = useState(format(new Date(end_date), "yyyy-MM-dd"));
 
     const [openModal, setOpenModal] = useState(false);
-    const [confirmingDataDeletion, setConfirmingDataDeletion] = useState(false);
-    const [categoryToDelete, setCategoryToDelete] = useState<string | null>(
-        null
-    );
 
     const [editModalOpen, setEditModalOpen] = useState(false);
     const [editingCategory, setEditingCategory] = useState<Category | null>(
         null
-    ); // State untuk data yang akan di-edit
+    );
 
     useEffect(() => {
         setCurrentPage(pagination.current_page);
@@ -47,8 +46,12 @@ export default function Index({
     const onPageChange = (page: number) => {
         router.get(
             route("master.categories.index"),
-            { search: searchQuery, page },
-            { preserveState: true }
+            { search: searchQuery, page, start_date: startDate, end_date: endDate },
+            {
+                preserveState: true,
+                onStart:() => setPending(true),
+                onFinish:() => setPending(false)
+            }
         );
         setCurrentPage(page);
     };
@@ -57,19 +60,59 @@ export default function Index({
         setRowsPerPage(newRowsPerPage);
         router.get(
             route("master.categories.index"),
-            { search: searchQuery, page, per_page: newRowsPerPage },
-            { preserveState: true }
+            { search: searchQuery, page, per_page: newRowsPerPage, start_date: startDate, end_date: endDate },
+            {
+                preserveState: true,
+                onStart:() => setPending(true),
+                onFinish:() => setPending(false)
+            }
         );
         setCurrentPage(page);
     };
 
-    const onSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const onSearchChange = (event: ChangeEvent<HTMLInputElement>) => {
         setSearchQuery(event.target.value);
         router.get(
             route("master.categories.index"),
-            { search: event.target.value, page: 1 },
-            { preserveState: true }
+            { search: event.target.value, page: 1, start_date: startDate, end_date: endDate },
+            {
+                preserveState: true,
+                onStart:() => setPending(true),
+                onFinish:() => setPending(false)
+            }
         );
+    };
+
+    const onStartDateChange = (date: Date | null) => {
+        if (date) {
+            const formattedDate = format(date, "yyyy-MM-dd");
+            setStartDate(formattedDate);
+            router.get(
+                route("master.categories.index"),
+                { search: searchQuery, page: 1, start_date: formattedDate, end_date: endDate },
+                {
+                    preserveState: true,
+                    onStart:() => setPending(true),
+                    onFinish:() => setPending(false)
+                }
+            );
+        }
+    };
+
+    const onEndDateChange = (date: Date | null) => {
+        if (date) {
+            const formattedDate = format(date, "yyyy-MM-dd");
+            setEndDate(formattedDate);
+            router.get(
+                route("master.categories.index"),
+                { search: searchQuery, page: 1, start_date: startDate, end_date: formattedDate },
+                {
+                    preserveState: true,
+                    onStart:() => setPending(true),
+                    onFinish:() => setPending(false)
+                }
+            );
+        }
     };
 
     const categoryInput = useRef<HTMLInputElement>(null);
@@ -110,7 +153,7 @@ export default function Index({
             if (result.isConfirmed) {
                 destroy(
                     route("master.categories.destroy", {
-                        id: categoryToDelete,
+                        id: id,
                     }),
                     {
                         onSuccess: () => reset(),
@@ -128,16 +171,6 @@ export default function Index({
         });
     };
 
-    const confirmDataDeletion = (id: string) => {
-        setCategoryToDelete(id);
-        setConfirmingDataDeletion(true);
-    };
-
-    const closeModal = () => {
-        setConfirmingDataDeletion(false);
-        setCategoryToDelete(null);
-        reset();
-    };
 
     const updateData = async () => {
         if (editingCategory) {
@@ -216,6 +249,28 @@ export default function Index({
             <Head title={title} />
             <div className="p-7 border border-gray-200 dark:border-gray-700 shadow-lg rounded-lg">
                 <h1 className="dark:text-white text-lg">{title}</h1>
+                <div className="grid grid-cols-2 gap-4 mt-5 mb-5">
+                    <div>
+                        <Label
+                            htmlFor="start_date"
+                            value="Start Date"
+                        />
+                        <Datepicker
+                            id="start_date"
+                            onSelectedDateChanged={date => onStartDateChange(date)}
+                            value={startDate}
+                        />
+                    </div>
+                    <div>
+                        <Label htmlFor="end_date" value="End Date" />
+                        <Datepicker
+                            id="end_date"
+                            onSelectedDateChanged={date => onEndDateChange(date)}
+                            value={endDate}
+                        />
+                    </div>
+                </div>
+
                 <div className="flex justify-between items-center space-x-2">
                     <Button className="w-40" onClick={() => setOpenModal(true)}>
                         <HiOutlinePlus className="mr-2 h-5 w-5" />
@@ -327,6 +382,7 @@ export default function Index({
                         onChangeRowsPerPage={onRowsPerPageChange}
                         highlightOnHover
                         persistTableHead
+                        progressPending={pending}
                     />
                 </div>
             </div>

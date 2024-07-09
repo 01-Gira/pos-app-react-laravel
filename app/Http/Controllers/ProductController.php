@@ -10,7 +10,7 @@ use Inertia\Inertia;
 use Inertia\Response;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Redirect;
-
+use Carbon\Carbon;
 
 class ProductController extends Controller
 {
@@ -20,12 +20,26 @@ class ProductController extends Controller
     public function index(Request $request)
     {
         $search = $request->input('search');
+        $startDate = $request->input('start_date');
+        $startDate = empty($startDate) ? Carbon::now()->firstOfMonth()->format('Y-m-d') : $startDate;
+        $endDate = $request->input('end_date');
+        $endDate = empty($endDate) ? Carbon::now()->endOfMonth()->format('Y-m-d') : $endDate;
+        $status = $request->input('status');
         $perPage = $request->input('per_page', 5);
 
         $products = Product::query()
             ->when($search, function ($query, $search) {
                 return $query->where('product_name', 'like', "%{$search}%")
                              ->orWhere('barcode', 'like', "%{$search}%");
+            })
+            ->when($startDate, function ($query, $startDate) {
+                return $query->whereDate('created_at', '>=', $startDate);
+            })
+            ->when($endDate, function ($query, $endDate) {
+                return $query->whereDate('created_at', '<=', $endDate);
+            })
+            ->when($status, function ($query, $status) {
+                return $query->where('category_id', $status);
             })
             ->with('category', 'discount')
             ->orderByDesc('created_at')
@@ -42,6 +56,10 @@ class ProductController extends Controller
                 'per_page' => $products->perPage(),
             ],
             'search' => $search,
+            'start_date' => $startDate,
+            'end_date' => $endDate,
+            'status' => $status,
+            'categories' => Category::all()
         ]);
     }
 

@@ -47,6 +47,8 @@ export interface Transaction {
     ppn: number;
     status: string;
     total_payment: number;
+    created_at: Date;
+    updated_at: Date;
 }
 
 export interface Purchase {
@@ -117,6 +119,7 @@ export type PageProps<
     };
     purchase: Purchase;
     transaction: Transaction;
+    transactions: Transaction[];
     products: Product[];
     discounts: Discount[];
     product: Product;
@@ -126,4 +129,7 @@ export type PageProps<
     pagination: Pagination;
     search: string;
     flash: Flash;
+    start_date: Date;
+    end_date: Date;
+    status: string;
 };

@@ -76,6 +76,8 @@ export default function Index({ title, auth, flash }: PageProps) {
                             ppn: 0,
                             status: "process",
                             total_payment: 0,
+                            created_at: new Date(),
+                            updated_at: new Date(),
                         },
                     ]);
                 }
@@ -244,6 +246,8 @@ export default function Index({ title, auth, flash }: PageProps) {
                                 payment_method: null,
                                 status: transaction.status,
                                 total_payment: transaction.total_payment,
+                                created_at: new Date(),
+                                updated_at: new Date(),
                             },
                         ]);
                         setOpenModalTableHoldTransaction(false);
