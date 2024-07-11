@@ -3,6 +3,7 @@ import { PageProps, Product, Supplier } from "@/types";
 import { Head, router, useForm } from "@inertiajs/react";
 import {
     Button,
+    Datepicker,
     Dropdown,
     FloatingLabel,
     Label,
@@ -26,10 +27,14 @@ export default function Index({
     pagination,
     search,
     flash,
+    start_date, end_date,
 }: PageProps) {
+    const [pending, setPending] = useState(false);
     const [currentPage, setCurrentPage] = useState(pagination.current_page);
     const [searchQuery, setSearchQuery] = useState(search || "");
     const [rowsPerPage, setRowsPerPage] = useState(pagination.per_page);
+    const [startDate, setStartDate] = useState(format(new Date(start_date), "yyyy-MM-dd"));
+    const [endDate, setEndDate] = useState(format(new Date(end_date), "yyyy-MM-dd"));
 
     useEffect(() => {
         setCurrentPage(pagination.current_page);
@@ -65,6 +70,38 @@ export default function Index({
             { search: event.target.value, page: 1 },
             { preserveState: true }
         );
+    };
+
+    const onStartDateChange = (date: Date | null) => {
+        if (date) {
+            const formattedDate = format(date, "yyyy-MM-dd");
+            setStartDate(formattedDate);
+            router.get(
+                route("master.suppliers.index"),
+                { search: searchQuery, page: 1, start_date: formattedDate, end_date: endDate },
+                {
+                    preserveState: true,
+                    onStart:() => setPending(true),
+                    onFinish:() => setPending(false)
+                }
+            );
+        }
+    };
+
+    const onEndDateChange = (date: Date | null) => {
+        if (date) {
+            const formattedDate = format(date, "yyyy-MM-dd");
+            setEndDate(formattedDate);
+            router.get(
+                route("master.suppliers.index"),
+                { search: searchQuery, page: 1, start_date: startDate, end_date: formattedDate },
+                {
+                    preserveState: true,
+                    onStart:() => setPending(true),
+                    onFinish:() => setPending(false)
+                }
+            );
+        }
     };
 
     const deleteData = async (id: string) => {
@@ -159,7 +196,27 @@ export default function Index({
             <Head title={title} />
             <div className="p-7 border border-gray-200 dark:border-gray-700 shadow-lg rounded-lg">
                 <h1 className="dark:text-white text-lg">Master {title}</h1>
-
+                <div className="grid grid-cols-2 gap-4 mt-5 mb-5">
+                    <div>
+                        <Label
+                            htmlFor="start_date"
+                            value="Start Date"
+                        />
+                        <Datepicker
+                            id="start_date"
+                            onSelectedDateChanged={date => onStartDateChange(date)}
+                            value={startDate}
+                        />
+                    </div>
+                    <div>
+                        <Label htmlFor="end_date" value="End Date" />
+                        <Datepicker
+                            id="end_date"
+                            onSelectedDateChanged={date => onEndDateChange(date)}
+                            value={endDate}
+                        />
+                    </div>
+                </div>
                 <div className="flex justify-between items-center space-x-2">
                     <Button
                         href={route("master.suppliers.create")}

@@ -26,8 +26,26 @@ export interface Product {
     price: number;
     total_price: number;
     pictureBase64: string;
+    category_id : string;
     category: Category | null;
     discount: Discount | null;
+}
+
+export interface ProductTransaction {
+    id: string;
+    product_name: string;
+    barcode: string;
+    created_at: Date;
+    updated_at: Date;
+    stock: number;
+    quantity: number;
+    price: number;
+    total_price: number;
+    pictureBase64: string;
+    category: Category | null;
+    discount: Discount | null;
+    transaction_details : TransactionDetail[];
+    purchase_details: PurchaseDetail[];
 }
 
 export interface TransactionDetail {
@@ -37,11 +55,14 @@ export interface TransactionDetail {
     price: number;
     total_price: number;
     product: Product;
+    created_at: Date;
+    updated_at: Date;
 }
 
 export interface Transaction {
     id: string;
     transaction_details: TransactionDetail[];
+    transaction_date: Date;
     payment_method: any;
     subtotal: number;
     ppn: number;
@@ -51,15 +72,30 @@ export interface Transaction {
     updated_at: Date;
 }
 
+export interface PurchaseDetail {
+    id: string;
+    quantity: number;
+    discount: number;
+    price: number;
+    total_price: number;
+    product: Product;
+    created_at: Date;
+    updated_at: Date;
+}
+
+
 export interface Purchase {
     id: string;
     supplier_id: string;
+    purchase_date: Date;
     purchase_details: TransactionDetail[];
     payment_method: any;
     subtotal: number;
     ppn: number;
     status: string;
     total_payment: number;
+    created_at: Date;
+    updated_at: Date;
 }
 
 export interface HoldTransaction {
@@ -108,6 +144,17 @@ export interface Session {
 export interface Flash {
     type_message: String;
     message: String;
+}
+
+export interface ChartDataProps {
+    labels: string[];
+    datasets: {
+        label: string;
+        backgroundColor: string[] | string;
+        borderColor: string[] | string;
+        borderWidth: number;
+        data: any[];
+    }[];
 }
 
 export type PageProps<

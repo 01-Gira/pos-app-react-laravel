@@ -3,9 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Models\Supplier;
+use App\Models\Logs;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
+use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 class SupplierController extends Controller
 {
@@ -14,6 +18,10 @@ class SupplierController extends Controller
      */
     public function index(Request $request)
     {
+        $startDate = $request->input('start_date');
+        $startDate = empty($startDate) ? Carbon::now()->firstOfMonth()->format('Y-m-d') : $startDate;
+        $endDate = $request->input('end_date');
+        $endDate = empty($endDate) ? Carbon::now()->endOfMonth()->format('Y-m-d') : $endDate;
         $search = $request->input('search');
         $perPage = $request->input('per_page', 5);
 
@@ -21,6 +29,12 @@ class SupplierController extends Controller
             ->when($search, function ($query, $search) {
                 return $query->where('supplier_name', 'like', "%{$search}%")
                              ->orWhere('uniq_code', 'like', "%{$search}%");
+            })
+            ->when($startDate, function ($query, $startDate) {
+                return $query->whereDate('created_at', '>=', $startDate);
+            })
+            ->when($endDate, function ($query, $endDate) {
+                return $query->whereDate('created_at', '<=', $endDate);
             })
             ->orderByDesc('created_at')
             ->paginate($perPage);
@@ -36,6 +50,8 @@ class SupplierController extends Controller
                 'per_page' => $suppliers->perPage(),
             ],
             'search' => $search,
+            'start_date' => $startDate,
+            'end_date' => $endDate
         ]);
     }
 
@@ -68,22 +84,41 @@ class SupplierController extends Controller
      */
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'uniq_code' => 'required|string|max:225',
-            'phone_no' => 'required|min:12|max:14',
-            'supplier_name' => 'required|max:255',
-            'address' => 'required|max:255'
-        ]);
+        try {
+            $logs = new Logs();
 
-        Supplier::updateOrCreate(
-            ['uniq_code' => $validated['uniq_code']],
-            $validated
-        );
+            DB::connection('pgsql')->beginTransaction();
 
-        return to_route('master.suppliers.index')->with([
-            'type_message' => 'success',
-            'message' => 'Supplier created successfully', 201
-        ]);
+            $validated = $request->validate([
+                'uniq_code' => 'required|string|max:225',
+                'phone_no' => 'required|min:12|max:14',
+                'supplier_name' => 'required|max:255',
+                'address' => 'required|max:255'
+            ]);
+
+            Supplier::updateOrCreate(
+                ['uniq_code' => $validated['uniq_code']],
+                $validated
+            );
+
+            DB::connection('pgsql')->commit();
+
+            $logs->insertLog('Supplier.store : Successfully create supplier');
+
+            return to_route('master.suppliers.index')->with([
+                'type_message' => 'success',
+                'message' => 'Successfully create supplier'
+            ]);
+
+        } catch (\Throwable $th) {
+
+            DB::connection('pgsql')->rollback();
+
+            return to_route('master.suppliers.index')->with([
+                'type_message' => 'warning',
+                'message' => 'Oops Something Went Wrong! Message : ' . $th->getMessage()
+            ]);
+        }
     }
 
     /**
@@ -111,17 +146,35 @@ class SupplierController extends Controller
      */
     public function update(Request $request, Supplier $supplier)
     {
-        $validated = $request->validate([
-            'supplier_name' => 'required|max:255',
-            'address' => 'required|max:255'
-        ]);
+        try {
+            $logs = new Logs();
 
-        $supplier->update($validated);
+            DB::connection('pgsql')->beginTransaction();
 
-        return to_route('master.suppliers.index')->with([
-            'type_message' => 'success',
-            'message' => 'Supplier updated successfully', 201
-        ]);
+            $validated = $request->validate([
+                'supplier_name' => 'required|max:255',
+                'address' => 'required|max:255'
+            ]);
+
+            $supplier->update($validated);
+
+            DB::connection('pgsql')->commit();
+
+            $logs->insertLog('Supplier.update : Successfully update supplier');
+
+            return to_route('master.suppliers.index')->with([
+                'type_message' => 'success',
+                'message' => 'Successfully update supplier'
+            ]);
+
+        } catch (\Throwable $th) {
+             DB::connection('pgsql')->rollback();
+
+            return to_route('master.suppliers.index')->with([
+                'type_message' => 'warning',
+                'message' => 'Oops Something Went Wrong! Message : ' . $th->getMessage()
+            ]);
+        }
     }
 
     /**
@@ -129,11 +182,28 @@ class SupplierController extends Controller
      */
     public function destroy(Supplier $supplier)
     {
-        $supplier->delete();
+        try {
+            $logs = new Logs();
 
-        return to_route('master.suppliers.index')->with([
-            'type_message' => 'success',
-            'message' => 'Supplier deleted successfully', 201
-        ]);
+            DB::connection('pgsql')->beginTransaction();
+
+            $supplier->delete();
+
+            DB::connection('pgsql')->commit();
+
+            $logs->insertLog('Supplier.delete : Successfully delete supplier');
+
+            return to_route('master.suppliers.index')->with([
+                'type_message' => 'success',
+                'message' => 'Supplier deleted successfully'
+            ]);
+        } catch (\Throwable $th) {
+            DB::connection('pgsql')->rollback();
+
+            return to_route('master.suppliers.index')->with([
+                'type_message' => 'warning',
+                'message' => 'Oops Something Went Wrong! Message : ' . $th->getMessage()
+            ]);
+        }
     }
 }

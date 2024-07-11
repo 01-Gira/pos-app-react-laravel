@@ -27,7 +27,7 @@ export default function Edit({
         product_name: product.product_name,
         stock: product.stock,
         price: product.price,
-        category_id: product.category?.id,
+        category_id: product.category_id,
         picture: null as File | null,
     });
 
@@ -84,7 +84,7 @@ export default function Edit({
                         />
                         <InputError message={errors.barcode} className="mt-2" />
                     </div>
-                    <div className="grid grid-cols-2 gap-4 mt-5">
+                    <div className="grid grid-cols-1 gap-4 mt-5">
                         <div>
                             <Label
                                 htmlFor="product_name"
@@ -100,22 +100,6 @@ export default function Edit({
                             />
                             <InputError
                                 message={errors.product_name}
-                                className="mt-2"
-                            />
-                        </div>
-                        <div>
-                            <Label htmlFor="stock" value="Stock" />
-                            <TextInput
-                                id="stock"
-                                type="number"
-                                value={data.stock}
-                                onChange={(e) =>
-                                    setData("stock", parseInt(e.target.value))
-                                }
-                                required
-                            />
-                            <InputError
-                                message={errors.stock}
                                 className="mt-2"
                             />
                         </div>

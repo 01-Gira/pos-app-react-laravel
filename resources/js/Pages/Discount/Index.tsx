@@ -1,6 +1,8 @@
+import InputError from "@/Components/InputError";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import { Discount, PageProps, Product } from "@/types";
 import { Head, router, useForm } from "@inertiajs/react";
+import axios from "axios";
 import { format } from "date-fns";
 import {
     Button,
@@ -12,9 +14,10 @@ import {
     Table,
     TextInput,
 } from "flowbite-react";
-import { useEffect, useState } from "react";
+import { FormEventHandler, InputHTMLAttributes, useEffect, useRef, useState } from "react";
 import DataTable, { TableColumn } from "react-data-table-component";
 import { HiOutlinePlus } from "react-icons/hi";
+import { ClipLoader } from "react-spinners";
 import Swal from "sweetalert2";
 
 export default function Index({
@@ -28,6 +31,11 @@ export default function Index({
     const [currentPage, setCurrentPage] = useState(pagination.current_page);
     const [searchQuery, setSearchQuery] = useState(search || "");
     const [rowsPerPage, setRowsPerPage] = useState(pagination.per_page);
+
+    const [addModal, setAddModal] = useState(false);
+    const [editModal, setEditModal] = useState(false);
+
+    const inputDiscount = useRef<HTMLInputElement>(null);
 
     const [swalCustomClass, setSwalCustomClass] = useState({
         popup: "!relative !transform !overflow-hidden !rounded-lg !bg-white !text-left !shadow-xl !transition-all sm:!my-8 sm:!w-full sm:!max-w-lg !p-0 !grid-cols-none",
@@ -82,18 +90,19 @@ export default function Index({
     const deleteData = async (id: string) => {
         destroy(route("master.discounts.destroy", { id }), {
             onSuccess: () => {
-                Swal.fire({
-                    buttonsStyling: false,
-                    customClass: swalCustomClass,
-                    title: "Poof! Your data has been deleted!",
-                    icon: "success",
-                });
                 reset();
             },
         });
     };
 
-    const { delete: destroy, put, processing, errors, reset } = useForm();
+    const { data, setData, delete: destroy, put, post, processing, errors, reset } = useForm({
+        id: '',
+        discount: 0,
+        product_id : '',
+        barcode: '',
+        product_name: ''
+    });
+
 
     const confirmDataDeletion = (id: string) => {
         Swal.fire({
@@ -116,6 +125,55 @@ export default function Index({
             }
         });
     };
+
+    const createData = () => {
+        setAddModal(true);
+    }
+    const storeData : FormEventHandler =  (e) => {
+        e.preventDefault();
+        post(route('master.discounts.index'), {
+            onFinish : () => setAddModal(false),
+            onError : () => inputDiscount.current?.focus()
+        });
+    }
+
+    const editData = async(id: string, discount: number) => {
+        setData((previousData) => ({
+            ...previousData,
+            id: id,
+            discount: discount
+        }));
+        setEditModal(true);
+    }
+
+    const updateDiscount = async() => {
+        await put(route('master.discounts.update', data.id), {
+            onSuccess: () => {
+                setEditModal(false);
+                reset();
+            }
+        })
+    }
+
+    useEffect(() => {
+        if (data.barcode.length > 0) {
+            getDataProduct(data.barcode);
+        }
+    }, [data.barcode]);
+
+    const getDataProduct = async (barcode: string) => {
+        const res = await axios.get(route('master.products.get-data', barcode));
+        const product = res.data.product;
+
+        if(product){
+            setData((prevData) => ({
+                ...prevData,
+                product_id: product.id,
+                product_name: product.product_name,
+            }));
+
+        }
+    }
 
     const columns: TableColumn<Discount>[] = [
         {
@@ -145,7 +203,7 @@ export default function Index({
             cell: (row: Discount) => (
                 <div className="flex space-x-4">
                     <a
-                        href={route("master.products.edit", row.id)}
+                        onClick={() => editData(row.id, row.discount)}
                         className="font-medium text-yellow-300 hover:underline dark:text-cyan-500"
                     >
                         Edit
@@ -177,6 +235,13 @@ export default function Index({
                 <h1 className="dark:text-white text-lg">{title}</h1>
 
                 <div className="flex justify-between items-center space-x-2">
+                    <Button
+                        onClick={() => setAddModal(true)}
+                        className="w-40 hover:bg-cyan-800"
+                    >
+                        <HiOutlinePlus className="mr-2 h-5 w-5" />
+                        Add Data
+                    </Button>
                     <FloatingLabel
                         variant="outlined"
                         value={searchQuery}
@@ -202,6 +267,136 @@ export default function Index({
                     />
                 </div>
             </div>
+
+            <Modal
+                size='xl'
+                show={addModal}
+                onClose={() => setAddModal(false)}
+            >
+                <Modal.Header>Add Discount</Modal.Header>
+                <form onSubmit={storeData}>
+                <Modal.Body>
+                    <div className="grid grid-cols-1 gap-4 mb-5">
+                        <Label
+                            htmlFor="barcode"
+                            value="Barcode"
+                        />
+                        <TextInput
+                            id="barcode"
+                            type="text"
+                            value={data.barcode}
+                            onChange={(e) => setData("barcode", e.target.value)}
+                        />
+                        <InputError
+                                message={errors.barcode}
+                                className="mt-2"
+                            />
+                    </div>
+                    <div className="grid grid-cols-1 gap-4 mb-5">
+                        <Label
+                            htmlFor="product_name"
+                            value="Product Name"
+                        />
+                        <TextInput
+                            id="product_name"
+                            readOnly
+                            type="text"
+                            value={data.product_name}
+                        />
+                        <InputError
+                                message={errors.product_name}
+                                className="mt-2"
+                            />
+                    </div>
+                    <div className="grid grid-cols-1 gap-4 mb-5">
+                        <Label
+                            htmlFor="discount"
+                            value="Discount Percentage"
+                        />
+                        <TextInput
+                            id="discount"
+                            type="number"
+                            value={data.discount}
+                            ref={inputDiscount}
+                            onChange={(e) =>
+                                setData(
+                                    "discount",
+                                    parseInt(e.target.value)
+                                )
+                            }
+                            min={0}
+                            max={100}
+                        />
+                        <InputError
+                                message={errors.discount}
+                                className="mt-2"
+                            />
+                    </div>
+                </Modal.Body>
+                <Modal.Footer>
+                    <Button type="submit" disabled={processing}>
+                        {processing ? (
+                            <ClipLoader size="20" />
+                        ) : (
+                            "Apply Discount"
+                        )}
+                    </Button>
+                    <Button
+                        color="gray"
+                        onClick={() => setAddModal(false)}
+                    >
+                        Cancel
+                    </Button>
+                </Modal.Footer>
+                </form>
+            </Modal>
+
+            <Modal
+                show={editModal}
+                onClose={() => setEditModal(false)}
+            >
+                <Modal.Header>Edit Discount</Modal.Header>
+                <Modal.Body>
+                    <div className="space-y-6">
+                        <Label
+                            htmlFor="discount"
+                            value="Discount Percentage"
+                        />
+                        <TextInput
+                            id="discount"
+                            type="number"
+                            value={data.discount}
+                            onChange={(e) =>
+                                setData(
+                                    "discount",
+                                    parseInt(e.target.value)
+                                )
+                            }
+                            min={0}
+                            max={100}
+                        />
+                        <InputError
+                                message={errors.discount}
+                                className="mt-2"
+                            />
+                    </div>
+                </Modal.Body>
+                <Modal.Footer>
+                    <Button onClick={updateDiscount} disabled={processing}>
+                        {processing ? (
+                            <ClipLoader size="20" />
+                        ) : (
+                            "Apply Discount"
+                        )}
+                    </Button>
+                    <Button
+                        color="gray"
+                        onClick={() => setEditModal(false)}
+                    >
+                        Cancel
+                    </Button>
+                </Modal.Footer>
+            </Modal>
         </AuthenticatedLayout>
     );
 }

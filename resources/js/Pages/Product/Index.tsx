@@ -27,14 +27,6 @@ export default function Index({
     const [endDate, setEndDate] = useState(format(new Date(end_date), "yyyy-MM-dd"));
     const [statusFilter, setStatusFilter] = useState(status || "");
 
-    useEffect(() => {
-        setCurrentPage(pagination.current_page);
-    }, [pagination.current_page]);
-
-    useEffect(() => {
-        setSearchQuery(search || "");
-    }, [search]);
-
     const onPageChange = (page: number) => {
         router.get(
             route("master.products.index"),

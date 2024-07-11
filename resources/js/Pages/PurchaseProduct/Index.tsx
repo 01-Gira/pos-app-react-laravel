@@ -51,51 +51,101 @@ export default function Index({ title, auth, flash, suppliers }: PageProps) {
 
     const purchaseId = purchase?.id || null;
 
-    const newPurchase = async () => {
-        if (!purchaseId) {
-            try {
-                setLoading(true);
+    const selectSupplier = useRef<HTMLSelectElement>(null);
 
-                const res = await axios.post(
-                    route("transaction.purchase-products.new-purchase")
-                );
+    const newPurchase = async () => {
+        try {
+            setLoading(true);
+
+            if(!purchase?.supplier_id){
+                setLoading(false);
+
+                Swal.fire({
+                    buttonsStyling: false,
+                    customClass: swalCustomClass,
+                    icon: "info",
+                    title: "Info",
+                    text: "Please select supplier first",
+                });
+
+                return;
+            }
+
+            if (purchaseId) {
+                setLoading(false);
+
+                Swal.fire({
+                    buttonsStyling: false,
+                    customClass: swalCustomClass,
+                    icon: "info",
+                    title: "Info",
+                    text: "There is a purchase in progress. You can't create a new purchase",
+                });
+
+                return;
+            }
+
+            const res = await axios.post(
+                route("transaction.purchase-products.new-purchase")
+            );
+
+            if(res.data.indctr === 1){
                 const purchase = res.data.purchase;
+
                 if (purchase) {
                     if (barcodeInput.current) {
                         barcodeInput.current.disabled = false;
                     }
-                    setPurchase({
-                        id: purchase.id,
-                        supplier_id: "",
-                        purchase_details: [],
-                        payment_method: null,
-                        subtotal: 0,
-                        ppn: 0,
-                        status: "process",
-                        total_payment: 0,
+                    if (selectSupplier.current) {
+                        selectSupplier.current.disabled = true;
+                    }
+                    setPurchase((prevPurchase) => {
+                        if (!prevPurchase) return prevPurchase;
+
+                        return {
+                            ...prevPurchase,
+                            id: purchase.id,
+                            purchase_details: [],
+                            payment_method: null,
+                            subtotal: 0,
+                            ppn: 0,
+                            status: "process",
+                            total_payment: 0,
+                            purchase_date: new Date(),
+                            created_at: new Date(),
+                            updated_at: new Date()
+                        };
                     });
                 }
-
-                setLoading(false);
-            } catch (error) {
-                setLoading(false);
+            }else{
+                Swal.fire({
+                    buttonsStyling: false,
+                    customClass: swalCustomClass,
+                    icon: "info",
+                    title: "Info",
+                    text: res.data.message,
+                });
             }
-        } else {
+
+            setLoading(false);
+        } catch (error : any) {
+            setLoading(false);
+
             Swal.fire({
-                buttonsStyling: false,
-                customClass: swalCustomClass,
-                icon: "info",
-                title: "Info",
-                text: "There is a purchase in progress. You can't create a new purchase",
+                icon: "warning",
+                title: "Warning",
+                text: error.message,
             });
         }
     };
 
     const getDataProduct = async (barcode: string) => {
         try {
+            setLoading(true);
             const res = await axios.get(
                 route("master.products.get-data", barcode)
             );
+
             const product = res.data.product;
 
             if (product) {
@@ -143,6 +193,8 @@ export default function Index({ title, auth, flash, suppliers }: PageProps) {
                                 product.discount
                             ),
                             product: product,
+                            created_at : new Date(),
+                            updated_at : new Date(),
                         };
 
                         return {
@@ -157,37 +209,57 @@ export default function Index({ title, auth, flash, suppliers }: PageProps) {
 
                 await savePurchase();
             }
+
             if (barcodeInput.current) {
                 barcodeInput.current.value = "";
             }
-        } catch (error) {
-            console.error("Error fetching product data:", error);
+        } catch (error : any) {
+            setLoading(false);
+
+            Swal.fire({
+                icon: "warning",
+                title: "Warning",
+                text: error.message,
+            });
         }
     };
 
     const savePurchase = async () => {
-        if (purchaseId) {
-            try {
-                setLoading(true);
-                const res = await axios.post(
-                    route("transaction.purchase-products.store"),
-                    {
-                        purchase,
-                    }
-                );
-                console.log(res);
-                setLoading(false);
-            } catch (error) {
-                setLoading(false);
-                console.error("Error saving transaction:", error);
+        try {
+            if(!purchaseId){
+                Swal.fire({
+                    customClass: swalCustomClass,
+                    icon: "info",
+                    title: "Info",
+                    text: "There is no purchase in progress",
+                });
+
+                return;
             }
-        } else {
+
+            const res = await axios.post(
+                route("transaction.purchase-products.store"),
+                {
+                    purchase,
+                }
+            );
+
+            if(res.data.indctr === 0){
+                Swal.fire({
+                    icon: "warning",
+                    title: "Warning",
+                    text: res.data.message,
+                });
+            }
+
+            setLoading(false);
+        } catch (error : any) {
+            setLoading(false);
+
             Swal.fire({
-                buttonsStyling: false,
-                customClass: swalCustomClass,
-                icon: "info",
-                title: "Info",
-                text: "There is no purchase in progress",
+                icon: "warning",
+                title: "Warning",
+                text: error.message,
             });
         }
     };
@@ -253,17 +325,6 @@ export default function Index({ title, auth, flash, suppliers }: PageProps) {
     const [paymentMethod, setPaymentMethod] = useState<string | null>(null);
 
     useEffect(() => {
-        if (supplierIdToSave !== null) {
-            const save = async () => {
-                await savePurchase();
-                setSupplierIdToSave(null);
-            };
-
-            save();
-        }
-    }, [supplierIdToSave]);
-
-    useEffect(() => {
         if (paymentMethod !== null) {
             const save = async () => {
                 await savePurchase();
@@ -290,40 +351,67 @@ export default function Index({ title, auth, flash, suppliers }: PageProps) {
     }, [purchase]);
 
     const submitPurchase = async () => {
-        if (
-            purchaseId &&
-            purchase &&
-            purchase?.purchase_details &&
-            purchase.purchase_details.length > 0
-        ) {
-            try {
-                setLoading(true);
-                const res = await axios.post(
-                    route("transaction.purchase-products.submit"),
-                    {
-                        purchase,
-                    }
-                );
-
-                if (res.status == 200) {
-                    setPurchase(undefined);
-                }
-
+        try {
+            setLoading(true);
+            if (
+                !purchaseId &&
+                !purchase
+            ) {
                 setLoading(false);
-            } catch (error) {
-                setLoading(false);
+
+                Swal.fire({
+                    buttonsStyling: false,
+                    customClass: swalCustomClass,
+                    icon: "info",
+                    title: "Info",
+                    text: "There is no purchase in progress or products list is empty",
+                });
+
+                return;
             }
-        } else {
+
+            if(purchase?.payment_method == '' || purchase?.payment_method == null) {
+                setLoading(false);
+
+                Swal.fire({
+                    buttonsStyling: false,
+                    customClass: swalCustomClass,
+                    icon: "info",
+                    title: "Info",
+                    text: "Please select payment method first!",
+                });
+
+                return;
+            }
+
+            const res = await axios.post(
+                route("transaction.purchase-products.submit"),
+                {
+                    purchase,
+                }
+            );
+
+            if (res.data.indctr === 1) {
+                window.location.reload();
+            }else{
+                Swal.fire({
+                    icon: "warning",
+                    title: "Warning",
+                    text: res.data.message,
+                });
+            }
+
+            setLoading(false);
+        } catch (error : any) {
+            setLoading(false);
+
             Swal.fire({
-                buttonsStyling: false,
-                customClass: swalCustomClass,
-                icon: "info",
-                title: "Info",
-                text: "There is no purchase in progress or products list is empty",
+                icon: "warning",
+                title: "Warning",
+                text: error.message,
             });
         }
     };
-
     return (
         <AuthenticatedLayout
             user={auth.user}
@@ -341,15 +429,21 @@ export default function Index({ title, auth, flash, suppliers }: PageProps) {
                     <h1 className="dark:text-white text-lg">{title}</h1>
                     <div className="flex">
                         <Select
+                            ref={selectSupplier}
                             value={purchase?.supplier_id}
                             onChange={(e) => {
-                                setPurchase((prevPurchase) => {
-                                    if (!prevPurchase) return prevPurchase;
-
-                                    return {
-                                        ...prevPurchase,
-                                        supplier_id: e.target.value,
-                                    };
+                                setPurchase({
+                                    id: "",
+                                    supplier_id: e.target.value,
+                                    purchase_details: [],
+                                    payment_method: null,
+                                    subtotal: 0,
+                                    ppn: 0,
+                                    status: "process",
+                                    total_payment: 0,
+                                    purchase_date: new Date(),
+                                    created_at: new Date(),
+                                    updated_at: new Date()
                                 });
 
                                 setSupplierIdToSave(e.target.value);

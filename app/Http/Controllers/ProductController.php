@@ -5,12 +5,16 @@ namespace App\Http\Controllers;
 use App\Models\Product;
 use App\Models\Discount;
 use App\Models\Category;
+use App\Models\Logs;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Redirect;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+
 
 class ProductController extends Controller
 {
@@ -110,43 +114,61 @@ class ProductController extends Controller
      */
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'barcode' => 'required|string|max:12|min:12',
-            'product_name' => 'required|string|max:225',
-            'category_id' => 'required|uuid',
-            'stock' => 'required|numeric',
-            'price' => 'required|numeric',
-            'picture' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
-        ]);
+        try {
+            $logs = new Logs();
 
-        $product = Product::where('barcode', $validated['barcode'])->first();
+            DB::connection('pgsql')->beginTransaction();
 
-        if ($request->hasFile('picture')) {
+            $validated = $request->validate([
+                'barcode' => 'required|string|max:12|min:12',
+                'product_name' => 'required|string|max:225',
+                'category_id' => 'required|uuid',
+                'stock' => 'required|numeric',
+                'price' => 'required|numeric',
+                'picture' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+            ]);
 
-            if ($product && $product->picture) {
-                Storage::disk('public')->delete($product->picture);
+            $product = Product::where('barcode', $validated['barcode'])->first();
+
+            if ($request->hasFile('picture')) {
+
+                if ($product && $product->picture) {
+                    Storage::disk('public')->delete($product->picture);
+                }
+
+                $picture = $request->file('picture');
+
+                $path = $picture->store('product_images', 'public'); // Store image in public storage under product_images directory
+
+                $validated['picture'] = $path;
+            }else {
+                if ($product && $product->picture) {
+                    $validated['picture'] = $product->picture;
+                }
             }
 
-            $picture = $request->file('picture');
+            Product::updateOrCreate(
+                ['barcode' => $validated['barcode']],
+                $validated
+            );
 
-            $path = $picture->store('product_images', 'public'); // Store image in public storage under product_images directory
+            DB::connection('pgsql')->commit();
 
-            $validated['picture'] = $path;
-        }else {
-            if ($product && $product->picture) {
-                $validated['picture'] = $product->picture;
-            }
+            $logs->insertLog('Product.store : Successfully store data');
+
+            return to_route('master.products.index')->with([
+                'type_message' => 'success',
+                'message' => 'Successfully store data product'
+            ]);
+
+        } catch (\Throwable $th) {
+            DB::connection('pgsql')->rollback();
+
+            return to_route('master.products.index')->with([
+                'type_message' => 'warning',
+                'message' => 'Oops Something Went Wrong! Message : ' . $th->getMessage()
+            ]);
         }
-
-        Product::updateOrCreate(
-            ['barcode' => $validated['barcode']],
-            $validated
-        );
-
-        return to_route('master.products.index')->with([
-            'type_message' => 'success',
-            'message' => 'Product created successfully', 201
-        ]);
     }
 
     /**
@@ -185,36 +207,52 @@ class ProductController extends Controller
      */
     public function update(Request $request, Product $product)
     {
-        $validated = $request->validate([
-            'barcode' => 'required|string|max:225',
-            'product_name' => 'required|string|max:225',
-            'category_id' => 'required|uuid',
-            'stock' => 'required|numeric',
-            'price' => 'required|numeric',
-            'picture' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
-        ]);
+        try {
+            $logs = new Logs();
 
-        if ($request->hasFile('picture')) {
-            if ($product->picture) {
-                Storage::disk('public')->delete($product->picture);
+            DB::connection('pgsql')->beginTransaction();
+
+            $validated = $request->validate([
+                'barcode' => 'required|string|max:225',
+                'product_name' => 'required|string|max:225',
+                'category_id' => 'required|uuid',
+                'price' => 'required|numeric',
+                'picture' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+            ]);
+
+            if ($request->hasFile('picture')) {
+                if ($product->picture) {
+                    Storage::disk('public')->delete($product->picture);
+                }
+                $picture = $request->file('picture');
+                $path = $picture->store('product_images', 'public'); // Store image in public storage under product_images directory
+                $validated['picture'] = $path;
+            }else {
+                $product = Product::where('barcode', $validated['barcode'])->first();
+                if ($product && $product->picture) {
+                    $validated['picture'] = $product->picture;
+                }
             }
-            $picture = $request->file('picture');
-            $path = $picture->store('product_images', 'public'); // Store image in public storage under product_images directory
-            $validated['picture'] = $path;
-        }else {
-            $product = Product::where('barcode', $validated['barcode'])->first();
-            if ($product && $product->picture) {
-                $validated['picture'] = $product->picture;
-            }
+
+            $product->update($validated);
+
+            DB::connection('pgsql')->commit();
+
+            $logs->insertLog('Product.update : Successfully updated product');
+
+            return to_route('master.products.index')->with([
+                'type_message' => 'success',
+                'message' => 'Successfully updated product'
+            ]);
+
+        } catch (\Throwable $th) {
+            DB::connection('pgsql')->rollback();
+
+            return to_route('master.products.index')->with([
+                'type_message' => 'warning',
+                'message' => 'Oops Something Went Wrong! Message : ' . $th->getMessage()
+            ]);
         }
-
-        $product->update($validated);
-
-        return to_route('master.products.index')->with([
-            'type_message' => 'success',
-            'message' => 'Product updated successfully', 201
-        ]);
-
     }
 
     /**
@@ -222,12 +260,30 @@ class ProductController extends Controller
      */
     public function destroy(Product $product)
     {
-        $product->delete();
+        try {
+            $logs = new Logs();
 
-        return to_route('master.products.index')->with([
-            'type_message' => 'success',
-            'message' => 'Product deleted successfully', 201
-        ]);
+            DB::connection('pgsql')->beginTransaction();
+
+            $product->delete();
+
+            DB::connection('pgsql')->commit();
+
+            $logs->insertLog('Product.delete : Successfully delete product');
+
+            return to_route('master.products.index')->with([
+                'type_message' => 'success',
+                'message' => 'Product deleted successfully'
+            ]);
+
+        } catch (\Throwable $th) {
+            DB::connection('pgsql')->rollback();
+
+            return to_route('master.products.index')->with([
+                'type_message' => 'warning',
+                'message' => 'Oops Something Went Wrong! Message : ' . $th->getMessage()
+            ]);
+        }
     }
 
     /**
@@ -235,20 +291,37 @@ class ProductController extends Controller
      */
     public function addDiscountProduct(Request $request, $product_id)
     {
-        $validated = $request->validate([
-            'discount' => 'required'
-        ]);
+        try {
+            $logs = new Logs();
 
-        Discount::updateOrCreate(
-            ['product_id' => $product_id],
-            [
-                'discount' => $validated['discount'
-            ]
-        ]);
+            DB::connection('pgsql')->beginTransaction();
 
-        return to_route('master.products.index')->with([
-            'type_message' => 'success',
-            'message' => 'Add discount to product successfully', 201
-        ]);
+            $validated = $request->validate([
+                'discount' => 'required'
+            ]);
+
+            Discount::updateOrCreate(
+                ['product_id' => $product_id],
+                [
+                    'discount' => $validated['discount'
+                ]
+            ]);
+
+            DB::connection('pgsql')->commit();
+
+            $logs->insertLog('Product.discount : Successfully add discount to product');
+
+            return to_route('master.products.index')->with([
+                'type_message' => 'success',
+                'message' => 'Successfully add discount to product'
+            ]);
+        } catch (\Throwable $th) {
+            DB::connection('pgsql')->rollback();
+
+            return to_route('master.products.index')->with([
+                'type_message' => 'warning',
+                'message' => 'Oops Something Went Wrong! Message : ' . $th->getMessage()
+            ]);
+        }
     }
 }

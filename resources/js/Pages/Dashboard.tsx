@@ -18,7 +18,7 @@ export default function Dashboard({ auth, flash}: PageProps) {
         >
             <Head title="Dashboard" />
                 <div className='p-7 border border-gray-200 dark:border-gray-700 shadow-lg rounded-lg'>
-
+                    <h1>Welcome back, {auth.user.store?.store_name}</h1>
                 </div>
 
         </AuthenticatedLayout>

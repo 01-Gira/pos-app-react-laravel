@@ -10,6 +10,7 @@ use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\ProfileController;
 
 use App\Http\Controllers\ReportTransactionController;
+use App\Http\Controllers\ReportProductsController;
 
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
@@ -63,7 +64,18 @@ Route::middleware('auth')->group(function () {
 
     Route::group(['prefix' => 'report'], function() {
 
-        Route::resource('transactions', ReportTransactionController::class)->names('report.transactions');
+        // Route::resource('transactions', ReportTransactionController::class)->name('report.transactions');
+        Route::get('transactions', [ReportTransactionController::class, 'index'])->name('report.transactions.index');
+
+        Route::get('transactions/get-transactions', [ReportTransactionController::class, 'getTransactions'])->name('report.transactions.get-transactions');
+        Route::get('transactions/get-purchases', [ReportTransactionController::class, 'getPurchases'])->name('report.transactions.get-purchases');
+
+
+        Route::get('transactions/get-detail-products/{id}', [ReportTransactionController::class, 'getTransactionDetails'])->name('report.transactions.get-detail-products');
+
+        Route::get('products', [ReportProductsController::class, 'index'])->name('report.products.index');
+        Route::get('products/get-products', [ReportProductsController::class, 'getProducts'])->name('report.products.get-products');
+
     });
 
 

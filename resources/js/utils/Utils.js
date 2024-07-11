@@ -52,3 +52,23 @@ export const classCustomSwal = {
     cancelButton:
         "mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:mt-0 sm:w-auto",
 };
+
+
+export const getFirstDayOfMonth = () => {
+    const date = new Date();
+    return new Date(date.getFullYear(), date.getMonth(), 1);
+}
+
+// Fungsi untuk mendapatkan tanggal akhir bulan
+export const getLastDayOfMonth = () => {
+    const date = new Date();
+    return new Date(date.getFullYear(), date.getMonth() + 1, 0);
+}
+
+
+export function randomColor() {
+    const r = Math.floor(Math.random() * 256); // Random nilai untuk red (0 to 255)
+    const g = Math.floor(Math.random() * 256); // Random nilai untuk green (0 to 255)
+    const b = Math.floor(Math.random() * 256); // Random nilai untuk blue (0 to 255)
+    return `rgba(${r}, ${g}, ${b}, 0.6)`; // Menghasilkan string rgba dengan opacity 0.6
+}

@@ -1,47 +1,42 @@
-import { BarElement, LinearScale, CategoryScale,  Chart, PointElement, LineElement } from 'chart.js';
-import React from 'react';
-import { Bar, Line } from 'react-chartjs-2';
+import { ChartDataProps, Purchase, Transaction, TransactionDetail } from '@/types';
+import { formatRupiah } from '@/utils/Utils';
+import {
+
+BarElement,
+LinearScale,
+CategoryScale,
+Chart,
+PointElement,
+LineElement,
+TooltipItem
+} from 'chart.js';
+import { eachDayOfInterval, format, parseISO } from 'date-fns';
+
+import { Line } from 'react-chartjs-2';
 
 Chart.register(CategoryScale, LinearScale, BarElement, PointElement, LineElement);
 
-interface ChartDataProps {
-    labels: string[];
-    dataset1Data: number[];
-    dataset2Data: number[];
-  }
+export default function LineChartComponent({ labels, datasets  } : ChartDataProps){
 
-export default function LineChartComponent({ labels, dataset1Data, dataset2Data } : ChartDataProps){
     const dataConfig = {
         labels: labels,
-        datasets: [
-          {
-            label: 'Dataset 1',
-            backgroundColor: 'rgba(75, 192, 192, 1)',
-            borderColor: 'rgba(0, 0, 0, 1)',
-            borderWidth: 2,
-            data: dataset1Data,
-          },
-          {
-            label: 'Dataset 2',
-            backgroundColor: 'rgba(255, 99, 132, 1)',
-            borderColor: 'rgba(0, 0, 0, 1)',
-            borderWidth: 2,
-            data: dataset2Data,
-          },
-        ],
-      };
+        datasets: datasets
+    };
 
-  const options = {
-    scales: {
-        y: {
-          beginAtZero: true
-        }
-      }
-  };
+    const options = {
+        scales: {
+            y: {
+            beginAtZero: true
+            }
+        },
+        plugins: {
 
-  return (
-    <div>
-      <Line data={dataConfig} options={options} />
-    </div>
-  );
+        },
+    };
+
+    return (
+        <div>
+        <Line data={dataConfig} options={options} />
+        </div>
+    );
 };

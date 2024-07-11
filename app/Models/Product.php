@@ -22,6 +22,15 @@ class Product extends Model
     {
         return $this->hasOne(Discount::class);
     }
-    
+
+    public function transactionDetails()
+    {
+        return $this->hasMany(TransactionDetail::class);
+    }
+
+    public function purchaseDetails()
+    {
+        return $this->hasMany(PurchaseDetail::class);
+    }
 
 }

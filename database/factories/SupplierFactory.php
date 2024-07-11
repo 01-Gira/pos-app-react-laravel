@@ -3,12 +3,11 @@
 namespace Database\Factories;
 
 use Illuminate\Database\Eloquent\Factories\Factory;
-use App\Models\User;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Store>
+ * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Supplier>
  */
-class StoreFactory extends Factory
+class SupplierFactory extends Factory
 {
     /**
      * Define the model's default state.
@@ -18,10 +17,10 @@ class StoreFactory extends Factory
     public function definition(): array
     {
         return [
-            'store_name' => fake()->name(),
-            'user_id' => User::factory(),
+            'uniq_code' => fake()->word(),
+            'supplier_name' => fake()->name(),
             'address' => fake()->address(),
-            'phone_no' => '+6281293062114',
+            'phone_no' => '081293062114',
         ];
     }
 }

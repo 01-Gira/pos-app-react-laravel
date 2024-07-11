@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Category;
+use App\Models\Logs;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -10,6 +11,9 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Http\RedirectResponse;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+
 
 class CategoryController extends Controller
 {
@@ -67,18 +71,35 @@ class CategoryController extends Controller
      */
     public function store(Request $request) : RedirectResponse
     {
-        $validated = $request->validate([
-            'category_name' => 'required|string|max:255',
-        ]);
-        // dd($request->all());
-        $category = Category::create([
-            'category_name' => $validated['category_name'],
-        ]);
+        try {
+            $logs = new Logs();
 
-        return Redirect::back()->with([
-            'type_message' => 'success',
-            'message' => 'Category created successfully', 201
-        ]);
+            DB::connection('pgsql')->beginTransaction();
+
+            $validated = $request->validate([
+                'category_name' => 'required|string|max:255',
+            ]);
+            // dd($request->all());
+            $category = Category::create([
+                'category_name' => $validated['category_name'],
+            ]);
+
+            DB::connection('pgsql')->commit();
+
+            $logs->insertLog('Category.store : Successfully create category');
+
+            return Redirect::back()->with([
+                'type_message' => 'success',
+                'message' => 'Successfully create category'
+            ]);
+        } catch (\Throwable $th) {
+            DB::connection('pgsql')->rollback();
+
+            return Redirect::back()->with([
+                'type_message' => 'warning',
+                'message' => 'Oops Something Went Wrong! Message : ' . $th->getMessage()
+            ]);
+        }
     }
 
     /**
@@ -102,18 +123,34 @@ class CategoryController extends Controller
      */
     public function update(Request $request, Category $category)
     {
-        $validated = $request->validate([
-            'category_name' => 'required|string|max:255',
-        ]);
+        try {
+            $logs = new Logs();
 
-        $category->update([
-            'category_name' => $validated['category_name']
-        ]);
+            DB::connection('pgsql')->beginTransaction();
 
-        return Redirect::back()->with([
-            'type_message' => 'success',
-            'message' => 'Category updated successfully', 201
-        ]);
+            $validated = $request->validate([
+                'category_name' => 'required|string|max:255',
+            ]);
+
+            $category->update([
+                'category_name' => $validated['category_name']
+            ]);
+
+            DB::connection('pgsql')->commit();
+
+            return Redirect::back()->with([
+                'type_message' => 'success',
+                'message' => 'Category updated successfully', 201
+            ]);
+
+        } catch (\Throwable $th) {
+            DB::connection('pgsql')->rollback();
+
+            return Redirect::back()->with([
+                'type_message' => 'warning',
+                'message' => 'Oops Something Went Wrong! Message : ' . $th->getMessage()
+            ]);
+        }
     }
 
     /**
@@ -121,12 +158,29 @@ class CategoryController extends Controller
      */
     public function destroy(Category $category)
     {
-        $category->delete();
+        try {
+            $logs = new Logs();
 
-        return Redirect::back()->with([
-            'type_message' => 'success',
-            'message' => 'Category deleted successfully'
+            DB::connection('pgsql')->beginTransaction();
 
-        ]);
+            $category->delete();
+
+            DB::connection('pgsql')->commit();
+
+            $logs->insertLog('Category.delete : Successfully delete category');
+
+            return Redirect::back()->with([
+                'type_message' => 'success',
+                'message' => 'Successfully delete category'
+            ]);
+
+        } catch (\Throwable $th) {
+            DB::connection('pgsql')->rollback();
+
+            return Redirect::back()->with([
+                'type_message' => 'warning',
+                'message' => 'Oops Something Went Wrong! Message : ' . $th->getMessage()
+            ]);
+        }
     }
 }

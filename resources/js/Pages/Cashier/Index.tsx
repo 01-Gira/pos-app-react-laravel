@@ -23,6 +23,7 @@ import { HiOutlineExclamationCircle } from "react-icons/hi";
 import DataTable, { TableColumn } from "react-data-table-component";
 import { format } from "date-fns";
 import Swal from "sweetalert2";
+import Transactions from "../Reports/Transactions";
 
 export default function Index({ title, auth, flash }: PageProps) {
     const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -54,50 +55,60 @@ export default function Index({ title, auth, flash }: PageProps) {
     const transactionId = transactions.length > 0 ? [transactions[0].id] : null;
 
     const newTransaction = async () => {
-        if (!transactionId) {
-            try {
-                setLoading(true);
+        try {
+            setLoading(true);
 
-                const res = await axios.post(
-                    route("transaction.cashier.new-transaction")
-                );
-                const transaction = res.data.transaction;
-                if (transaction) {
-                    if (barcodeInput.current) {
-                        barcodeInput.current.disabled = false;
-                    }
-
-                    setTransactions([
-                        {
-                            id: transaction.id,
-                            transaction_details: [],
-                            payment_method: null,
-                            subtotal: 0,
-                            ppn: 0,
-                            status: "process",
-                            total_payment: 0,
-                            created_at: new Date(),
-                            updated_at: new Date(),
-                        },
-                    ]);
-                }
+            if (transactionId) {
                 setLoading(false);
-            } catch (error) {
-                setLoading(false);
+                Swal.fire({
+                    buttonsStyling: false,
+                    customClass: swalCustomClassProps,
+                    icon: "info",
+                    title: "Info",
+                    text: "There is a transaction in progress. You can't create a new transaction",
+                });
+                return;
             }
-        } else {
+
+            const res = await axios.post(
+                route("transaction.cashier.new-transaction")
+            );
+            const transaction = res.data.transaction;
+            if (transaction) {
+                if (barcodeInput.current) {
+                    barcodeInput.current.disabled = false;
+                }
+
+                setTransactions([
+                    {
+                        id: transaction.id,
+                        transaction_details: [],
+                        payment_method: null,
+                        subtotal: 0,
+                        ppn: 0,
+                        status: "process",
+                        total_payment: 0,
+                        transaction_date: new Date(),
+                        created_at: new Date(),
+                        updated_at: new Date(),
+                    },
+                ]);
+            }
+            setLoading(false);
+        } catch (error : any) {
+            setLoading(false);
+
             Swal.fire({
-                buttonsStyling: false,
-                customClass: swalCustomClassProps,
-                icon: "info",
-                title: "Info",
-                text: "There is a transaction in progress. You can't create a new transaction",
+                icon: "warning",
+                title: "Warning",
+                text: error.message,
             });
         }
     };
 
     const getDataProduct = async (barcode: string) => {
         try {
+            setLoading(true);
             const res = await axios.get(
                 route("master.products.get-data", barcode)
             );
@@ -156,6 +167,8 @@ export default function Index({ title, auth, flash }: PageProps) {
                                                 product.discount
                                             ),
                                             product: product,
+                                            created_at : new Date(),
+                                            updated_at : new Date(),
                                         };
 
                                     return {
@@ -179,33 +192,57 @@ export default function Index({ title, auth, flash }: PageProps) {
             if (barcodeInput.current) {
                 barcodeInput.current.value = "";
             }
-        } catch (error) {
-            console.error("Error fetching product data:", error);
+        } catch (error : any) {
+            setLoading(false);
+
+            Swal.fire({
+                icon: "warning",
+                title: "Warning",
+                text: error.message,
+            });
         }
     };
 
     const saveTransaction = async () => {
-        if (transactionId) {
-            try {
-                setLoading(true);
-                const res = await axios.post(
-                    route("transaction.cashier.store"),
-                    {
-                        transactions,
-                    }
-                );
+        try {
+            setLoading(true);
+
+            if(!transactionId){
                 setLoading(false);
-            } catch (error) {
-                setLoading(false);
-                console.error("Error saving transaction:", error);
+                Swal.fire({
+                    buttonsStyling: false,
+                    customClass: swalCustomClassProps,
+                    icon: "info",
+                    title: "Info",
+                    text: "There is no transaction in progress or products list is empty",
+                });
+
+                return;
             }
-        } else {
+
+            const res = await axios.post(
+                route("transaction.cashier.store"),
+                {
+                    transactions,
+                }
+            );
+
+            if(res.data.indctr === 0){
+                Swal.fire({
+                    icon: "warning",
+                    title: "Warning",
+                    text: res.data.message,
+                });
+            }
+
+            setLoading(false);
+
+        } catch (error : any) {
+            setLoading(false);
             Swal.fire({
-                buttonsStyling: false,
-                customClass: swalCustomClassProps,
-                icon: "info",
-                title: "Info",
-                text: "There is no transaction in progress or products list is empty",
+                icon: "warning",
+                title: "Warning",
+                text: error.message,
             });
         }
     };
@@ -213,41 +250,62 @@ export default function Index({ title, auth, flash }: PageProps) {
     const [modalHoldTransaction, setModalHoldTransaction] = useState(false);
 
     const holdTransaction = async (id: any, status: string) => {
-        if (status == "hold" && !transactionId) {
-            setSwalProps((prevSwalProps) => ({
-                ...prevSwalProps,
-                show: true,
-                icon: "info",
-                title: "Info",
-                text: "There is no transaction in progress",
-            }));
-        } else if (id) {
-            try {
-                setLoading(true);
+        try {
+            setLoading(true);
 
-                const res = await axios.put(
-                    route("transaction.cashier.hold-transaction", id),
-                    {
-                        status: status,
-                        transactions,
-                    }
-                );
+            if (status === "hold" && !transactionId) {
+                setLoading(false);
+                Swal.fire({
+                    showCloseButton: false,
+                    showConfirmButton: false,
+                    icon: "info",
+                    title: "Info",
+                    text: "There is no transaction in progress",
+                });
+
+                return;
+            }
+
+            if (status === 'completed' && transactions && transactions.length > 0 && (transactions[0].payment_method === '' || transactions[0].payment_method === null)) {
+                setLoading(false);
+
+                Swal.fire({
+                    showCloseButton: false,
+                    showConfirmButton: false,
+                    icon: "info",
+                    title: "Info",
+                    text: "Please select payment method first! or product list is empty!",
+                });
+
+                return;
+            }
+
+            const res = await axios.put(
+                route("transaction.cashier.hold-transaction", id),
+                {
+                    status: status,
+                    transactions,
+                }
+            );
+
+            setLoading(false);
+
+            if (res.data.indctr === 1) {
                 const transaction = res.data.transaction;
-
                 if (transaction) {
-                    if (transaction.status == "process") {
+                    if (transaction.status === "process") {
                         setTransactions([
                             {
                                 id: transaction.id,
-                                transaction_details:
-                                    transaction.transaction_details,
-                                subtotal: transaction.total_price,
+                                transaction_details: transaction.transaction_details,
+                                subtotal: transaction.subtotal,
                                 ppn: transaction.ppn,
-                                payment_method: null,
+                                payment_method: transaction.payment_method,
                                 status: transaction.status,
                                 total_payment: transaction.total_payment,
                                 created_at: new Date(),
                                 updated_at: new Date(),
+                                transaction_date: new Date()
                             },
                         ]);
                         setOpenModalTableHoldTransaction(false);
@@ -264,14 +322,27 @@ export default function Index({ title, auth, flash }: PageProps) {
                         }
                     }
                 }
+            } else {
+                Swal.fire({
+                    icon: "warning",
+                    title: "Warning",
+                    text: res.data.message,
+                });
 
-                setLoading(false);
-            } catch (error) {
-                setLoading(false);
-                console.error("Error saving transaction:", error);
+                return;
             }
+
+        } catch (error : any) {
+            setLoading(false);
+
+            Swal.fire({
+                icon: "warning",
+                title: "Warning",
+                text: error.message,
+            });
         }
     };
+
 
     const calculateTotalPrice = (
         price: number,
@@ -335,8 +406,19 @@ export default function Index({ title, auth, flash }: PageProps) {
     ];
 
     const listHoldTransaction = async () => {
-        if (!transactionId) {
             try {
+                if (transactionId) {
+                    Swal.fire({
+                        customClass: swalCustomClassProps,
+                        buttonsStyling: false,
+                        icon: "info",
+                        title: "Info",
+                        text: "There is a transaction in progress. You can't open list hold transaction",
+                    });
+
+                    return;
+                }
+
                 const res = await axios.get(
                     route("transaction.cashier.get-data-transactions", "hold")
                 );
@@ -346,18 +428,13 @@ export default function Index({ title, auth, flash }: PageProps) {
                 }
 
                 setOpenModalTableHoldTransaction(true);
-            } catch (error) {
-                console.log(error);
+            } catch (error : any) {
+                Swal.fire({
+                    icon: "warning",
+                    title: "Warning",
+                    text: error.message,
+                });
             }
-        } else {
-            Swal.fire({
-                customClass: swalCustomClassProps,
-                buttonsStyling: false,
-                icon: "info",
-                title: "Info",
-                text: "There is a transaction in progress. You can't open list hold transaction",
-            });
-        }
     };
 
     const [tableHoldTransactionId, setTableHoldTransactionId] = useState<
@@ -377,26 +454,43 @@ export default function Index({ title, auth, flash }: PageProps) {
     };
 
     const printReceipt = async () => {
-        if (
-            transactionId &&
-            transactions.length > 0 &&
-            transactions.some((t) => t.transaction_details?.length > 0)
-        ) {
+        try {
+            if (!transactionId || transactions.some((t) => t.transaction_details?.length === 0)) {
+                Swal.fire({
+                    buttonsStyling: false,
+                    customClass: swalCustomClassProps,
+                    icon: "info",
+                    title: "Info",
+                    text: "There is no transaction in progress or products list is empty",
+                });
+                return;
+            }
+
+            if (transactions[0].payment_method == '' || transactions[0].payment_method == null) {
+                Swal.fire({
+                    buttonsStyling: false,
+                    customClass: swalCustomClassProps,
+                    icon: "info",
+                    title: "Info",
+                    text: "Please select payment method first!",
+                });
+                return;
+            }
+
+            await holdTransaction(transactionId, "completed");
+
             const url = route("transaction.cashier.print", {
                 id: transactionId,
             });
 
-            await holdTransaction(transactionId, "completed");
+            await window.open(url, "_blank");
 
-            window.open(url, "_blank");
-        } else {
-            setSwalProps((prevSwalProps) => ({
-                ...prevSwalProps,
-                show: true,
-                icon: "info",
-                title: "Info",
-                text: "There is no transaction in progress or products list is empty",
-            }));
+        } catch (error : any) {
+            Swal.fire({
+                icon: "warning",
+                title: "Warning",
+                text: error.message,
+            });
         }
     };
 
@@ -412,12 +506,17 @@ export default function Index({ title, auth, flash }: PageProps) {
                     },
                 }
             );
+
             const transactions = res.data.transactions;
             if (transactions) {
                 setHoldTransactions(transactions);
             }
-        } catch (error) {
-            console.log(error);
+        } catch (error : any) {
+            Swal.fire({
+                icon: "warning",
+                title: "Warning",
+                text: error.message,
+            });
         }
     };
 
@@ -583,17 +682,21 @@ export default function Index({ title, auth, flash }: PageProps) {
                 <Modal
                     show={openModalTableHoldTransaction}
                     onClose={() => setOpenModalTableHoldTransaction(false)}
+                    className={`fixed inset-0 z-50 overflow-y-auto ${openModalTableHoldTransaction ? 'animate-fadeIn' : 'animate-fadeOut'}`}
                     size="xlg"
                 >
                     <Modal.Header>
                         <p>List Hold Transaction</p>
                     </Modal.Header>
                     <Modal.Body>
+                        <div className="flex justify-end">
                         <FloatingLabel
-                            variant="outlined"
-                            onChange={handleSearchChange}
-                            label="search..."
-                        />
+                                variant="outlined"
+                                onChange={handleSearchChange}
+                                label="search..."
+                            />
+                        </div>
+
                         <DataTable
                             highlightOnHover
                             persistTableHead
@@ -854,6 +957,13 @@ export default function Index({ title, auth, flash }: PageProps) {
                             <BeatLoader />
                         ) : (
                             <>
+                                <Button
+                                    color="red"
+                                    className="ms-3"
+                                    onClick={() => holdTransaction(transactionId, 'hold')}
+                                >
+                                    Hold
+                                </Button>
                                 <Button
                                     color="success"
                                     className="ms-3"

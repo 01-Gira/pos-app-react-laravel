@@ -14,13 +14,16 @@ import {
 } from "react-icons/hi";
 import { twMerge } from "tailwind-merge";
 import { usePage } from "@inertiajs/react";
+import { User } from "@/types";
 
 interface SidebarLayoutProps {
+    user: User
     sidebarOpen: boolean;
     setSidebarOpen: (open: boolean) => void;
 }
 
 export default function SidebarLayout({
+    user,
     sidebarOpen,
     setSidebarOpen,
 }: SidebarLayoutProps) {
@@ -36,11 +39,11 @@ export default function SidebarLayout({
         >
             <Sidebar aria-label="Sidebar with logo branding example">
                 <Sidebar.Logo
-                    href="#"
-                    img="/favicon.svg"
+                    href={route('dashboard')}
+                    img="#"
                     imgAlt="Flowbite logo"
                 >
-                    Flowbite
+                  {user.store?.store_name}
                 </Sidebar.Logo>
                 <Sidebar.Items className="py-12">
                     <Sidebar.ItemGroup>
@@ -83,6 +86,11 @@ export default function SidebarLayout({
                                 Cashier
                             </Sidebar.Item>
                             <Sidebar.Item
+                                className={
+                                    route().current("transaction.purchase-products.*")
+                                        ? "bg-gray-300 text-black"
+                                        : ""
+                                }
                                 href={route(
                                     "transaction.purchase-products.index"
                                 )}
@@ -172,11 +180,16 @@ export default function SidebarLayout({
                                 Transactions
                             </Sidebar.Item>
                             <Sidebar.Item
+                                className={
+                                    route().current("report.products.*")
+                                        ? "bg-gray-300 text-black"
+                                        : ""
+                                }
                                 href={route(
-                                    "transaction.purchase-products.index"
+                                    "report.products.index"
                                 )}
                             >
-                                Purchase Product
+                                Products
                             </Sidebar.Item>
                         </Sidebar.Collapse>
                         <Sidebar.Collapse

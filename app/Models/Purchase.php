@@ -13,4 +13,8 @@ class Purchase extends Model
 
     protected $fillable = ['purchase_date', 'supplier_id','payment_method', 'total_amount', 'ppn'];
 
+    public function purchaseDetails()
+    {
+        return $this->hasMany(PurchaseDetail::class);
+    }
 }

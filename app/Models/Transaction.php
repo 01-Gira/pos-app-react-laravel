@@ -10,11 +10,10 @@ class Transaction extends Model
 {
     use HasFactory, HasUuids;
 
-    protected $fillable = ['transaction_date', 'payment_method', 'total_amount', 'ppn'];
+    protected $fillable = ['transaction_date', 'payment_method', 'total_amount', 'ppn', 'subtotal', 'status'];
 
     public function transactionDetails()
     {
-        
         return $this->hasMany(TransactionDetail::class);
     }
 }

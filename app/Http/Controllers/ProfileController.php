@@ -30,15 +30,25 @@ class ProfileController extends Controller
      */
     public function update(ProfileUpdateRequest $request): RedirectResponse
     {
-        $request->user()->fill($request->validated());
+        $user = $request->user();
 
-        if ($request->user()->isDirty('email')) {
-            $request->user()->email_verified_at = null;
+        if ($request->has('email')) {
+            $user->email = $request->input('email');
+
+            if ($user->isDirty('email')) {
+                $user->email_verified_at = null;
+            }
         }
 
-        $request->user()->save();
+        if ($request->has('store_name')) {
+            $store = $user->store;
+            $store->store_name = $request->input('store_name');
+            $store->save();
+        }
 
-        return Redirect::route('profile.edit');
+        $user->save();
+
+        return Redirect::route('setting.profile.edit');
     }
 
     /**

@@ -23,6 +23,7 @@ export default function AuthenticatedLayout({
     return (
         <div className="flex h-screen overflow-hidden">
             <SidebarLayout
+                user={user}
                 sidebarOpen={sidebarOpen}
                 setSidebarOpen={setSidebarOpen}
             />
