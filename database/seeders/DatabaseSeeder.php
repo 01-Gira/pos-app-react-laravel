@@ -24,22 +24,15 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         Store::factory(1)->create();
-        Category::factory(3)->create();
 
-        $categoryIds = Category::pluck('id')->toArray();
+        Category::factory(40)->create();
 
+        Product::factory(100)->create();
 
-        Product::factory(5)->create([
-            'category_id' => function () use ($categoryIds) {
-                return $categoryIds[array_rand($categoryIds)];
-            },
-        ]);
+        Supplier::factory(10)->create();
 
-
-        Supplier::factory(3)->create();
-
-        Transaction::factory(500)->create();
-        Purchase::factory(500)->create();
+        Transaction::factory(5000)->create();
+        Purchase::factory(5000)->create();
 
         // TransactionDetail::factory(2000)->create();
 

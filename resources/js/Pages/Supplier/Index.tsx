@@ -5,6 +5,7 @@ import {
     Button,
     Datepicker,
     Dropdown,
+    FileInput,
     FloatingLabel,
     Label,
     Modal,
@@ -18,6 +19,7 @@ import { HiOutlinePlus } from "react-icons/hi";
 import { format } from "date-fns";
 import Swal from "sweetalert2";
 import { classCustomSwal } from "@/utils/Utils";
+import axios from "axios";
 // import swal from "sweetalert";
 
 export default function Index({
@@ -183,6 +185,55 @@ export default function Index({
         },
     ];
 
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            Swal.fire({
+                buttonsStyling: false,
+                customClass: classCustomSwal,
+                title: "Import Data",
+                text: "Are you sure want to import data?",
+                icon: "question",
+                showCancelButton: true,
+                showConfirmButton: true,
+                confirmButtonText: "Yes",
+                confirmButtonColor: "#3085d6",
+                showLoaderOnConfirm: true,
+                preConfirm : async () => {
+                    try {
+                        const formData = new FormData();
+                        formData.append('file', file);
+                        const res = await axios.post(route('master.suppliers.import-data'), formData, {
+                            headers: {
+                                'Content-Type': 'multipart/form-data'
+                            }
+                        })
+
+                        e.target.value = '';
+                        return res.data.message;
+                    } catch (error) {
+                        Swal.showValidationMessage(`
+                            Request failed: ${error}
+                          `);
+
+                    }
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    Swal.fire({
+                        title: `${result.value}`,
+                        confirmButtonText: 'OK'
+                    }).then((result) => {
+                      if (result.isConfirmed) {
+                        setPending(true);
+                        window.location.reload();
+                      }
+                    });
+                }
+            });
+        }
+    };
+
     return (
         <AuthenticatedLayout
             user={auth.user}
@@ -217,20 +268,44 @@ export default function Index({
                         />
                     </div>
                 </div>
-                <div className="flex justify-between items-center space-x-2">
-                    <Button
-                        href={route("master.suppliers.create")}
-                        className="w-40 hover:bg-cyan-800"
-                    >
-                        <HiOutlinePlus className="mr-2 h-5 w-5" />
-                        Add Data
-                    </Button>
-                    <FloatingLabel
-                        variant="outlined"
-                        value={searchQuery}
-                        onChange={onSearchChange}
-                        label="search..."
-                    />
+
+                <div className="flex space-x-4">
+                    <div>
+                        <div className="mb-2 block">
+                            <Label htmlFor="btn-add" value="Add Supplier" />
+                        </div>
+                            <Button
+                                href={route("master.suppliers.create")}
+                                className="w-40 hover:bg-cyan-800"
+                            >
+                                <HiOutlinePlus className="mr-2 h-5 w-5" />
+                                Add Data
+                            </Button>
+                        </div>
+                    <div>
+                        <div className="mb-2 block">
+                            <Label htmlFor="file-upload" value="Import Data" />
+                        </div>
+                        <FileInput id="file-upload" onChange={handleFileChange} />
+                    </div>
+                </div>
+
+                <div className="flex justify-between items-center mt-4">
+                    <div className="flex space-x-4">
+                        <Button.Group>
+                            <Button color="red">PDF</Button>
+                            <Button color="gray">Excel</Button>
+                            <Button color="gray">CSV</Button>
+                        </Button.Group>
+                    </div>
+                    <div className="flex justify-end">
+                        <FloatingLabel
+                            variant="outlined"
+                            value={searchQuery}
+                            onChange={onSearchChange}
+                            label="search..."
+                        />
+                    </div>
                 </div>
 
                 <div className="overflow-x-auto">
@@ -247,6 +322,7 @@ export default function Index({
                         onChangeRowsPerPage={onRowsPerPageChange}
                         highlightOnHover
                         persistTableHead
+                        progressPending={pending}
                     />
                 </div>
             </div>

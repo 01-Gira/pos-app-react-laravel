@@ -1,14 +1,16 @@
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import { PageProps, Product } from "@/types";
 import { Head, router, useForm } from "@inertiajs/react";
-import { Button, Datepicker, FloatingLabel, Label, Modal, Select, TextInput } from "flowbite-react";
+import { Button, Datepicker, FileInput, FloatingLabel, Label, Modal, Select, TextInput } from "flowbite-react";
 import { ChangeEvent, useEffect, useState } from "react";
 import DataTable, { TableColumn } from "react-data-table-component";
 import { HiOutlinePlus, HiOutlineExclamationCircle } from "react-icons/hi";
 import { format } from "date-fns";
 import { ClipLoader } from "react-spinners";
 import Swal from "sweetalert2";
-import { classCustomSwal } from "@/utils/Utils";
+import { classCustomSwal, exportExcel, exportPDF } from "@/utils/Utils";
+import axios from "axios";
+import Barcode from "react-barcode";
 
 export default function Index({
     title,
@@ -126,26 +128,27 @@ export default function Index({
             showConfirmButton: true,
             confirmButtonText: "Yes, delete it!",
             confirmButtonColor: "#3085d6",
+            showLoaderOnConfirm: true,
+            preConfirm : async () => {
+                try {
+                    await destroy(
+                        route("master.products.destroy", {
+                            product: id,
+                        }),
+                        {
+                            onSuccess: () => {
+                                reset();
+                            },
+                        }
+                    );
+                } catch (error) {
+                    Swal.showValidationMessage(`
+                        Request failed: ${error}
+                      `);
+                }
+            }
         }).then((result) => {
             if (result.isConfirmed) {
-                destroy(
-                    route("master.products.destroy", {
-                        product: id,
-                    }),
-                    {
-                        onSuccess: () => {
-                            reset();
-                        },
-                    }
-                );
-            } else {
-                Swal.fire({
-                    buttonsStyling: false,
-                    customClass: classCustomSwal,
-                    icon: "info",
-                    title: "info",
-                    text: "Your data is safe!",
-                });
             }
         });
     };
@@ -162,6 +165,7 @@ export default function Index({
     } = useForm({
         product_id: "",
         discount: 0,
+        file: null as File | null,
     });
 
     const [openModalDiscount, setModalDiscount] = useState(false);
@@ -173,9 +177,9 @@ export default function Index({
         setModalDiscount(true);
     };
 
-    const applyDiscount = () => {
+    const applyDiscount = async() => {
         if (productId) {
-            post(route("master.products.add-discount", productId), {
+            await post(route("master.products.add-discount", productId), {
                 onFinish: () => {
                     setModalDiscount(false);
                 },
@@ -183,10 +187,16 @@ export default function Index({
         }
     };
 
+    const printBarcode = async (id: string) => {
+        const url = route("master.products.print-barcode", id);
+
+        await window.open(url, "_blank");
+    }
+
     const columns: TableColumn<Product>[] = [
         {
             name: "Barcode",
-            selector: (row: Product) => row.barcode,
+            cell: (row: Product) => <Barcode value={row.barcode} />,
             sortable: true,
         },
         {
@@ -222,6 +232,8 @@ export default function Index({
         },
         {
             name: "Action",
+            width: '30%',
+            center: true,
             cell: (row: Product) => (
                 <div className="flex space-x-4">
                     <a
@@ -236,12 +248,20 @@ export default function Index({
                                 row.id,
                                 row.discount?.discount || 0
                             );
-                            // setData("id", row.id);
-                            // setData("discount", row.discount?.discount || 0);
                         }}
                         className="font-medium text-green-500 hover:underline dark:text-red-300"
                     >
                         Discount
+                    </button>
+                    <button
+                        onClick={() => {
+                            printBarcode(
+                                row.id,
+                            );
+                        }}
+                        className="font-medium text-green-500 hover:underline dark:text-red-300"
+                    >
+                        Print Barcode
                     </button>
                     <button
                         onClick={() => deleteData(row.id)}
@@ -253,6 +273,59 @@ export default function Index({
             ),
         },
     ];
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            Swal.fire({
+                buttonsStyling: false,
+                customClass: classCustomSwal,
+                title: "Import Data",
+                text: "Are you sure want to import data?",
+                icon: "question",
+                showCancelButton: true,
+                showConfirmButton: true,
+                confirmButtonText: "Yes",
+                confirmButtonColor: "#3085d6",
+                showLoaderOnConfirm: true,
+                preConfirm : async () => {
+                    try {
+                        const formData = new FormData();
+                        formData.append('file', file);
+                        const res = await axios.post(route('master.products.import-data'), formData, {
+                            headers: {
+                                'Content-Type': 'multipart/form-data'
+                            }
+                        })
+
+                        e.target.value = '';
+                        return res.data.message;
+                    } catch (error) {
+                        Swal.showValidationMessage(`
+                            Request failed: ${error}
+                          `);
+
+                    }
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    Swal.fire({
+                        buttonsStyling: false,
+                        customClass: classCustomSwal,
+                        icon: "question",
+                        title: `${result.value}`,
+                        confirmButtonText: 'OK'
+                    }).then((result) => {
+                      if (result.isConfirmed) {
+                        setPending(true);
+                        window.location.reload();
+                      }
+                    });
+                }
+            });
+        }
+    };
+
 
     return (
         <AuthenticatedLayout
@@ -302,21 +375,44 @@ export default function Index({
                         </Select>
                     </div>
                 </div>
-                <div className="flex justify-between items-center space-x-2">
-                    <Button
-                        href={route("master.products.create")}
-                        className="w-40 hover:bg-cyan-800"
-                    >
-                        <HiOutlinePlus className="mr-2 h-5 w-5" />
-                        Add Data
-                    </Button>
-                    <FloatingLabel
-                        variant="outlined"
-                        value={searchQuery}
-                        onChange={onSearchChange}
-                        label="search..."
-                    />
+                <div className="flex space-x-4">
+                    <div>
+                        <div className="mb-2 block">
+                            <Label htmlFor="btn-add" value="Add Product" />
+                        </div>
+                            <Button
+                                href={route("master.products.create")}
+                                className="w-40 hover:bg-cyan-800"
+                            >
+                                <HiOutlinePlus className="mr-2 h-5 w-5" />
+                                Add Data
+                            </Button>
+                        </div>
+                    <div>
+                        <div className="mb-2 block">
+                            <Label htmlFor="file-upload" value="Import Data From Excel" />
+                        </div>
+                        <FileInput id="file-upload" onChange={handleFileChange} />
+                    </div>
                 </div>
+                <div className="flex justify-between items-center mt-4">
+                    <div className="flex space-x-4">
+                        <Button.Group>
+                            <Button color="red">PDF</Button>
+                            <Button color="gray" onClick={exportExcel}>Excel</Button>
+                            <Button color="gray">CSV</Button>
+                        </Button.Group>
+                    </div>
+                    <div className="flex justify-end">
+                        <FloatingLabel
+                            variant="outlined"
+                            value={searchQuery}
+                            onChange={onSearchChange}
+                            label="search..."
+                        />
+                    </div>
+                </div>
+
 
                 <Modal
                     show={openModalDiscount}

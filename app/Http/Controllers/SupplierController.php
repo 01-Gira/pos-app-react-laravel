@@ -10,6 +10,8 @@ use Inertia\Response;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use App\Imports\SuppliersImport;
+use Maatwebsite\Excel\Facades\Excel;
 
 class SupplierController extends Controller
 {
@@ -205,5 +207,37 @@ class SupplierController extends Controller
                 'message' => 'Oops Something Went Wrong! Message : ' . $th->getMessage()
             ]);
         }
+    }
+
+    public function importData(Request $request)
+    {
+       try {
+           $logs = new Logs();
+
+           DB::connection('pgsql')->beginTransaction();
+
+           $validated = $request->validate([
+               'file' => 'required|file|mimes:xlsx'
+           ]);
+
+           $file = $validated['file'];
+
+           Excel::import(new SuppliersImport, $file);
+
+           DB::connection('pgsql')->commit();
+
+           return response()->json([
+               'indctr' => 1,
+               'message' => 'Succesfully import data suppliers'
+           ]);
+
+       } catch (\Throwable $th) {
+           DB::connection('pgsql')->commit();
+
+           return response()->json([
+               'indctr' => 0,
+               'message' => 'Oops Something Went Wrong! Message : ' . $th->getMessage()
+           ]);
+       }
     }
 }

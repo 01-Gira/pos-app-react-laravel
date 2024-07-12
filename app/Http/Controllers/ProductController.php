@@ -14,7 +14,8 @@ use Illuminate\Support\Facades\Redirect;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
-
+use App\Imports\ProductsImport;
+use Maatwebsite\Excel\Facades\Excel;
 
 class ProductController extends Controller
 {
@@ -120,7 +121,7 @@ class ProductController extends Controller
             DB::connection('pgsql')->beginTransaction();
 
             $validated = $request->validate([
-                'barcode' => 'required|string|max:12|min:12',
+                'barcode' => 'required|numeric|min:12|max:13',
                 'product_name' => 'required|string|max:225',
                 'category_id' => 'required|uuid',
                 'stock' => 'required|numeric',
@@ -213,7 +214,7 @@ class ProductController extends Controller
             DB::connection('pgsql')->beginTransaction();
 
             $validated = $request->validate([
-                'barcode' => 'required|string|max:225',
+                'barcode' => 'required|numeric|min:12|max:13',
                 'product_name' => 'required|string|max:225',
                 'category_id' => 'required|uuid',
                 'price' => 'required|numeric',
@@ -323,5 +324,49 @@ class ProductController extends Controller
                 'message' => 'Oops Something Went Wrong! Message : ' . $th->getMessage()
             ]);
         }
+    }
+
+     /**
+     * Import data products from Excel.
+     */
+
+     public function importData(Request $request)
+     {
+        try {
+            $logs = new Logs();
+
+            DB::connection('pgsql')->beginTransaction();
+
+            $validated = $request->validate([
+                'file' => 'required|file|mimes:xlsx'
+            ]);
+
+            $file = $validated['file'];
+
+            Excel::import(new ProductsImport, $file);
+
+            DB::connection('pgsql')->commit();
+
+            return response()->json([
+                'indctr' => 1,
+                'message' => 'Succesfully import data products'
+            ]);
+
+        } catch (\Throwable $th) {
+            DB::connection('pgsql')->commit();
+
+            return response()->json([
+                'indctr' => 0,
+                'message' => 'Oops Something Went Wrong! Message : ' . $th->getMessage()
+            ]);
+        }
+     }
+
+    public function printBarcode($barcodes)
+    {
+        dd($barcodes);
+        // return Inertia::render('Product/Print', [
+        //     'barcode' => $product->barcode
+        // ]);
     }
 }

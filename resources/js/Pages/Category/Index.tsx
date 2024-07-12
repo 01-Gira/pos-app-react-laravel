@@ -2,7 +2,7 @@ import InputError from "@/Components/InputError";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import { Category, PageProps } from "@/types";
 import { Head, router, useForm, usePage } from "@inertiajs/react";
-import { Button, Datepicker, FloatingLabel, Label, Modal, Select, TextInput } from "flowbite-react";
+import { Button, Datepicker, FileInput, FloatingLabel, Label, Modal, Select, TextInput } from "flowbite-react";
 import { ChangeEvent, useEffect, useRef, useState } from "react";
 import { HiOutlinePlus, HiOutlineExclamationCircle } from "react-icons/hi";
 import { format } from "date-fns";
@@ -10,6 +10,7 @@ import DataTable, { TableColumn } from "react-data-table-component";
 import { ClipLoader } from "react-spinners";
 import Swal from "sweetalert2";
 import { classCustomSwal } from "@/utils/Utils";
+import axios from "axios";
 
 export default function Index({
     title,
@@ -149,24 +150,27 @@ export default function Index({
             showConfirmButton: true,
             confirmButtonText: "Yes, delete it!",
             confirmButtonColor: "#3085d6",
+            showLoaderOnConfirm: true,
+            preConfirm : async () => {
+                try {
+                    await destroy(
+                        route("master.categories.destroy", {
+                            id: id,
+                        }),
+                        {
+                            onSuccess: () => reset(),
+                        }
+                    );
+                } catch (error) {
+                    Swal.showValidationMessage(`
+                        Request failed: ${error}
+                      `);
+
+                }
+            }
         }).then((result) => {
             if (result.isConfirmed) {
-                destroy(
-                    route("master.categories.destroy", {
-                        id: id,
-                    }),
-                    {
-                        onSuccess: () => reset(),
-                    }
-                );
-            } else {
-                Swal.fire({
-                    buttonsStyling: false,
-                    customClass: classCustomSwal,
-                    icon: "info",
-                    title: "info",
-                    text: "Your data is safe!",
-                });
+
             }
         });
     };
@@ -236,6 +240,51 @@ export default function Index({
         },
     ];
 
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            Swal.fire({
+                buttonsStyling: false,
+                customClass: classCustomSwal,
+                title: "Import Data",
+                text: "Are you sure want to import data?",
+                icon: "question",
+                showCancelButton: true,
+                showConfirmButton: true,
+                confirmButtonText: "Yes",
+                confirmButtonColor: "#3085d6",
+                showLoaderOnConfirm: true,
+                preConfirm : async () => {
+                    try {
+                        const formData = new FormData();
+                        formData.append('file', file);
+                        const res = await axios.post(route('master.categories.import-data'), formData, {
+                            headers: {
+                                'Content-Type': 'multipart/form-data'
+                            }
+                        })
+
+                        e.target.value = '';
+                        return res.data.message;
+                    } catch (error) {
+                        Swal.showValidationMessage(`
+                            Request failed: ${error}
+                          `);
+
+                    }
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    Swal.fire({
+                        title: `${result.value}`
+                      });
+                    window.location.reload();
+
+                }
+            });
+        }
+    };
+
     return (
         <AuthenticatedLayout
             user={auth.user}
@@ -271,17 +320,40 @@ export default function Index({
                     </div>
                 </div>
 
-                <div className="flex justify-between items-center space-x-2">
-                    <Button className="w-40" onClick={() => setOpenModal(true)}>
-                        <HiOutlinePlus className="mr-2 h-5 w-5" />
-                        Add Data
-                    </Button>
-                    <FloatingLabel
-                        variant="outlined"
-                        value={searchQuery}
-                        onChange={onSearchChange}
-                        label="search..."
-                    />
+                <div className="flex space-x-4">
+                    <div>
+                        <div className="mb-2 block">
+                            <Label htmlFor="btn-add" value="Add Category" />
+                        </div>
+                            <Button className="w-40" onClick={() => setOpenModal(true)}>
+                                <HiOutlinePlus className="mr-2 h-5 w-5" />
+                                Add Data
+                            </Button>
+                        </div>
+                    <div>
+                    <div className="mb-2 block">
+                        <Label htmlFor="file-upload" value="Import Data" />
+                    </div>
+                        <FileInput id="file-upload" onChange={handleFileChange} />
+                    </div>
+                </div>
+
+                <div className="flex justify-between items-center mt-4">
+                    <div className="flex space-x-4">
+                        <Button.Group>
+                            <Button color="red">PDF</Button>
+                            <Button color="green">Excel</Button>
+                            <Button color="green">CSV</Button>
+                        </Button.Group>
+                    </div>
+                    <div className="flex justify-end">
+                        <FloatingLabel
+                            variant="outlined"
+                            value={searchQuery}
+                            onChange={onSearchChange}
+                            label="search..."
+                        />
+                    </div>
                 </div>
 
                 <Modal show={openModal} onClose={() => setOpenModal(false)}>

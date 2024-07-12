@@ -1,12 +1,15 @@
 import InputError from "@/Components/InputError";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import { Discount, PageProps, Product } from "@/types";
+import { classCustomSwal } from "@/utils/Utils";
 import { Head, router, useForm } from "@inertiajs/react";
 import axios from "axios";
 import { format } from "date-fns";
 import {
     Button,
+    Datepicker,
     Dropdown,
+    FileInput,
     FloatingLabel,
     Label,
     Modal,
@@ -27,11 +30,15 @@ export default function Index({
     pagination,
     search,
     flash,
+    start_date,
+    end_date
 }: PageProps) {
+    const [pending, setPending] = useState(false);
     const [currentPage, setCurrentPage] = useState(pagination.current_page);
     const [searchQuery, setSearchQuery] = useState(search || "");
     const [rowsPerPage, setRowsPerPage] = useState(pagination.per_page);
-
+    const [startDate, setStartDate] = useState(format(new Date(start_date), "yyyy-MM-dd"));
+    const [endDate, setEndDate] = useState(format(new Date(end_date), "yyyy-MM-dd"));
     const [addModal, setAddModal] = useState(false);
     const [editModal, setEditModal] = useState(false);
 
@@ -87,6 +94,38 @@ export default function Index({
         );
     };
 
+    const onStartDateChange = (date: Date | null) => {
+        if (date) {
+            const formattedDate = format(date, "yyyy-MM-dd");
+            setStartDate(formattedDate);
+            router.get(
+                route("master.products.index"),
+                { search: searchQuery, page: 1, start_date: formattedDate, end_date: endDate },
+                {
+                    preserveState: true,
+                    onStart:() => setPending(true),
+                    onFinish:() => setPending(false)
+                }
+            );
+        }
+    };
+
+    const onEndDateChange = (date: Date | null) => {
+        if (date) {
+            const formattedDate = format(date, "yyyy-MM-dd");
+            setEndDate(formattedDate);
+            router.get(
+                route("master.products.index"),
+                { search: searchQuery, page: 1, start_date: startDate, end_date: formattedDate },
+                {
+                    preserveState: true,
+                    onStart:() => setPending(true),
+                    onFinish:() => setPending(false)
+                }
+            );
+        }
+    };
+
     const deleteData = async (id: string) => {
         destroy(route("master.discounts.destroy", { id }), {
             onSuccess: () => {
@@ -126,9 +165,6 @@ export default function Index({
         });
     };
 
-    const createData = () => {
-        setAddModal(true);
-    }
     const storeData : FormEventHandler =  (e) => {
         e.preventDefault();
         post(route('master.discounts.index'), {
@@ -234,20 +270,58 @@ export default function Index({
             <div className="p-7 border border-gray-200 dark:border-gray-700 shadow-lg rounded-lg">
                 <h1 className="dark:text-white text-lg">{title}</h1>
 
-                <div className="flex justify-between items-center space-x-2">
-                    <Button
-                        onClick={() => setAddModal(true)}
-                        className="w-40 hover:bg-cyan-800"
-                    >
-                        <HiOutlinePlus className="mr-2 h-5 w-5" />
-                        Add Data
-                    </Button>
-                    <FloatingLabel
-                        variant="outlined"
-                        value={searchQuery}
-                        onChange={onSearchChange}
-                        label="search..."
-                    />
+                <div className="grid grid-cols-2 gap-4 mt-5 mb-5">
+                    <div>
+                        <Label
+                            htmlFor="start_date"
+                            value="Start Date"
+                        />
+                        <Datepicker
+                            id="start_date"
+                            onSelectedDateChanged={date => onStartDateChange(date)}
+                            value={startDate}
+                        />
+                    </div>
+                    <div>
+                        <Label htmlFor="end_date" value="End Date" />
+                        <Datepicker
+                            id="end_date"
+                            onSelectedDateChanged={date => onEndDateChange(date)}
+                            value={endDate}
+                        />
+                    </div>
+                </div>
+
+                <div className="flex space-x-4">
+                    <div>
+                        <div className="mb-2 block">
+                            <Label htmlFor="btn-add" value="Add Discount" />
+                        </div>
+                        <Button
+                            onClick={() => setAddModal(true)}
+                            className="w-40 hover:bg-cyan-800"
+                        >
+                            <HiOutlinePlus className="mr-2 h-5 w-5" />
+                            Add Data
+                        </Button>
+                        </div>
+                </div>
+                <div className="flex justify-between items-center mt-4">
+                    <div className="flex space-x-4">
+                        <Button.Group>
+                            <Button color="red">PDF</Button>
+                            <Button color="gray">Excel</Button>
+                            <Button color="gray">CSV</Button>
+                        </Button.Group>
+                    </div>
+                    <div className="flex justify-end">
+                        <FloatingLabel
+                            variant="outlined"
+                            value={searchQuery}
+                            onChange={onSearchChange}
+                            label="search..."
+                        />
+                    </div>
                 </div>
 
                 <div className="overflow-x-auto">

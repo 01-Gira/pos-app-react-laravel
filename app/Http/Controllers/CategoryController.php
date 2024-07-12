@@ -13,7 +13,8 @@ use Illuminate\Http\RedirectResponse;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
-
+use App\Imports\CategoryImport;
+use Maatwebsite\Excel\Facades\Excel;
 
 class CategoryController extends Controller
 {
@@ -179,6 +180,38 @@ class CategoryController extends Controller
 
             return Redirect::back()->with([
                 'type_message' => 'warning',
+                'message' => 'Oops Something Went Wrong! Message : ' . $th->getMessage()
+            ]);
+        }
+    }
+
+    public function importData(Request $request)
+     {
+        try {
+            $logs = new Logs();
+
+            DB::connection('pgsql')->beginTransaction();
+
+            $validated = $request->validate([
+                'file' => 'required|file|mimes:xlsx'
+            ]);
+
+            $file = $validated['file'];
+
+            Excel::import(new CategoryImport, $file);
+
+            DB::connection('pgsql')->commit();
+
+            return response()->json([
+                'indctr' => 1,
+                'message' => 'Succesfully import data categories'
+            ]);
+
+        } catch (\Throwable $th) {
+            DB::connection('pgsql')->commit();
+
+            return response()->json([
+                'indctr' => 0,
                 'message' => 'Oops Something Went Wrong! Message : ' . $th->getMessage()
             ]);
         }

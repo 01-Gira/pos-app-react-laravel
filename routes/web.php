@@ -52,13 +52,17 @@ Route::middleware('auth')->group(function () {
         Route::resource('products', ProductController::class)->names('master.products');
         Route::get('products/get-data/{barcode}', [ProductController::class, 'getDataProduct'])->name('master.products.get-data');
         Route::post('products/add-discount/{id}', [ProductController::class, 'addDiscountProduct'])->name('master.products.add-discount');
+        Route::post('products/import-data', [ProductController::class, 'importData'])->name('master.products.import-data');
+        Route::get('products/print-barcode/{barcodes}', [ProductController::class, 'printBarcode'])->name('master.products.print-barcode');
 
         Route::resource('discounts', DiscountController::class)->names('master.discounts');
 
         Route::resource('categories', CategoryController::class)->names('master.categories');
+        Route::post('categories/import-data', [CategoryController::class, 'importData'])->name('master.categories.import-data');
 
         Route::resource('suppliers', SupplierController::class)->names('master.suppliers');
         Route::get('suppliers/get-data/{uniq_code}', [SupplierController::class, 'getDataSupplier'])->name('master.suppliers.get-data');
+        Route::post('suppliers/import-data',  [SupplierController::class, 'importData'])->name('master.suppliers.import-data');
 
     });
 

@@ -1,5 +1,9 @@
 import { useState } from "react";
 import resolveConfig from "tailwindcss/resolveConfig";
+import { CSVLink } from 'react-csv';
+// import { jsPDF } from 'jspdf';
+// import 'jspdf-autotable';
+import * as XLSX from 'xlsx';
 
 export const tailwindConfig = () => {
     // Tailwind config
@@ -72,3 +76,16 @@ export function randomColor() {
     const b = Math.floor(Math.random() * 256); // Random nilai untuk blue (0 to 255)
     return `rgba(${r}, ${g}, ${b}, 0.6)`; // Menghasilkan string rgba dengan opacity 0.6
 }
+
+export const exportPDF = () => {
+    const doc = new jsPDF();
+    doc.autoTable({ html: '#data-table' });
+    doc.save('table.pdf');
+  };
+
+export const exportExcel = (data) => {
+    const worksheet = XLSX.utils.json_to_sheet(data);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Sheet1');
+    XLSX.writeFile(workbook, 'table.xlsx');
+  };

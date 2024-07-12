@@ -13,6 +13,8 @@ use Illuminate\Support\Facades\Redirect;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use App\Imports\DiscountImport;
+use Maatwebsite\Excel\Facades\Excel;
 
 class DiscountController extends Controller
 {
@@ -20,6 +22,10 @@ class DiscountController extends Controller
     {
         $search = $request->input('search');
         $perPage = $request->input('per_page', 5);
+        $startDate = $request->input('start_date');
+        $startDate = empty($startDate) ? Carbon::now()->firstOfMonth()->format('Y-m-d') : $startDate;
+        $endDate = $request->input('end_date');
+        $endDate = empty($endDate) ? Carbon::now()->endOfMonth()->format('Y-m-d') : $endDate;
 
         $discounts = Discount::query()
             ->when($search, function ($query, $search) {
@@ -28,6 +34,12 @@ class DiscountController extends Controller
                           ->orWhere('barcode', 'like', "%{$search}%")
                           ->orWhere('discount', 'like', "%{$search}%");
                 });
+            })
+            ->when($startDate, function ($query, $startDate) {
+                return $query->whereDate('created_at', '>=', $startDate);
+            })
+            ->when($endDate, function ($query, $endDate) {
+                return $query->whereDate('created_at', '<=', $endDate);
             })
             ->with('product')
             ->orderByDesc('created_at')
@@ -44,6 +56,8 @@ class DiscountController extends Controller
                 'per_page' => $discounts->perPage(),
             ],
             'search' => $search,
+            'start_date' => $startDate,
+            'end_date' => $endDate,
         ]);
     }
 
@@ -64,7 +78,6 @@ class DiscountController extends Controller
                 'product_id' => $validated['product_id'],
                 'discount' => $validated['discount']
             ]);
-
 
             DB::connection('pgsql')->commit();
 

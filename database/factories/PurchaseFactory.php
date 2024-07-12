@@ -14,6 +14,7 @@ class PurchaseFactory extends Factory
     public function definition(): array
     {
         return [
+            'supplier_id' => Supplier::factory(),
             'purchase_date' => $this->faker->dateTimeThisMonth(),
             'created_at' => $this->faker->dateTimeThisMonth(),
             'updated_at' => $this->faker->dateTimeThisMonth(),
