@@ -22,4 +22,15 @@ class TransactionDetail extends Model
     {
         return $this->belongsTo(Transaction::class);
     }
+
+    public function scopeFilter($query, array $filters)
+    {
+        return $query
+        ->when(isset($filters['start_date']), function ($query) use ($filters) {
+            return $query->whereDate('transaction_details.created_at', '>=', $filters['start_date']);
+        })
+        ->when(isset($filters['end_date']), function ($query) use ($filters) {
+            return $query->whereDate('transaction_details.created_at', '<=', $filters['end_date']);
+        });
+    }
 }

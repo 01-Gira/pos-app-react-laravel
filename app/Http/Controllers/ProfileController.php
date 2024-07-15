@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\User;
+
 use App\Http\Requests\ProfileUpdateRequest;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Http\RedirectResponse;
@@ -10,6 +12,8 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Redirect;
 use Inertia\Inertia;
 use Inertia\Response;
+use Illuminate\Validation\Rule;
+
 
 class ProfileController extends Controller
 {
@@ -28,23 +32,23 @@ class ProfileController extends Controller
     /**
      * Update the user's profile information.
      */
-    public function update(ProfileUpdateRequest $request): RedirectResponse
+    public function update(Request $request): RedirectResponse
     {
+        $validated = $request->validate([
+            'store_name' =>  ['required', 'string', 'max:255'],
+            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', Rule::unique(User::class)->ignore($this->user()->id)],
+        ]);
+
         $user = $request->user();
 
-        if ($request->has('email')) {
-            $user->email = $request->input('email');
+        $user->email = $request->input('email');
 
-            if ($user->isDirty('email')) {
-                $user->email_verified_at = null;
-            }
-        }
-
-        if ($request->has('store_name')) {
-            $store = $user->store;
-            $store->store_name = $request->input('store_name');
-            $store->save();
-        }
+        // dd($request->all());
+        $store = $user->store;
+        $store->store_name = $request->input('store_name');
+        $store->address = $request->input('address');
+        $store->phone_no = $request->input('phone_no');
+        $store->save();
 
         $user->save();
 

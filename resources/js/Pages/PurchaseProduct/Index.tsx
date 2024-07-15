@@ -5,6 +5,7 @@ import {
     TransactionDetail,
     Transaction,
     Purchase,
+    PurchaseDetail,
 } from "@/types";
 import { Head } from "@inertiajs/react";
 import axios from "axios";
@@ -182,8 +183,9 @@ export default function Index({ title, auth, flash, suppliers }: PageProps) {
                         };
                     } else {
                         // Add new product details
-                        const newPurchaseDetail: TransactionDetail = {
+                        const newPurchaseDetail: PurchaseDetail = {
                             id: product.id,
+                            purchase_id : '',
                             quantity: 1,
                             discount: product.discount,
                             price: product.price,
@@ -491,7 +493,7 @@ export default function Index({ title, auth, flash, suppliers }: PageProps) {
                         </Table.Head>
                         <Table.Body className="divide-y">
                             {purchase?.purchase_details?.map(
-                                (detail: TransactionDetail, index) => (
+                                (detail: PurchaseDetail, index) => (
                                     <Table.Row
                                         key={detail.id}
                                         className="bg-white dark:border-gray-700 dark:bg-gray-800"

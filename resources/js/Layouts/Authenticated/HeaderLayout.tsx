@@ -1,5 +1,8 @@
-import { User } from "@/types";
-import { DarkThemeToggle } from "flowbite-react";
+import { Notification, User } from "@/types";
+import { router, usePage } from "@inertiajs/react";
+import { Button, DarkThemeToggle, Dropdown } from "flowbite-react";
+import Echo from 'laravel-echo';
+
 import {
     Dispatch,
     PropsWithChildren,
@@ -7,9 +10,7 @@ import {
     useEffect,
     useState,
 } from "react";
-// import DropdownProfile from '@/Components/DropdownProfile';
-import Dropdown from "@/Components/Dropdown";
-import DataTable, { createTheme } from "react-data-table-component";
+import { HiBell} from "react-icons/hi";
 
 interface HeaderLayoutProps {
     user: User;
@@ -17,11 +18,34 @@ interface HeaderLayoutProps {
     setSidebarOpen: Dispatch<SetStateAction<boolean>>;
 }
 
+declare global {
+    interface Window {
+        Echo: any;
+    }
+}
+
+
 export default function HeaderLayout({
     user,
     sidebarOpen,
     setSidebarOpen,
 }: PropsWithChildren<HeaderLayoutProps>) {
+    const { notifications, ...pageProps } = usePage().props as { notifications: Notification[], errors: any };
+
+    const unreadNotifications = notifications.filter(notification => !notification.read_at);
+
+    const truncateText = (text: string, maxLength: number) => {
+        if (text.length > maxLength) {
+            return text.slice(0, maxLength) + '...';
+        }
+        return text;
+    };
+
+    const markNotificationAsRead = async(id : string) => {
+        router.put(route('notifications.update', { notification: id }));
+    }
+
+
     return (
         <header
             className={`sticky top-0 bg-white dark:bg-[#182235] border-b border-slate-200 dark:border-slate-700 z-30 w-full transition-all duration-300 ${
@@ -53,50 +77,49 @@ export default function HeaderLayout({
                             </svg>
                         </button>
                     </div>
-                    {/* Header: Right side */}
+
                     <div className="flex items-center ml-auto space-x-3 z-40">
-                        {/* <DarkThemeToggle /> */}
+                        <DarkThemeToggle />
                         <hr className="w-px h-6 bg-slate-200 dark:bg-slate-700 border-none" />
-                        <Dropdown>
-                            <Dropdown.Trigger>
-                                <span className="inline-flex rounded-md">
-                                    <button
-                                        type="button"
-                                        className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 bg-white hover:text-gray-700 focus:outline-none transition ease-in-out duration-150"
-                                    >
-                                        {user.store.store_name}
+                        <Dropdown
+                            label=""
+                            dismissOnClick={false}
+                            renderTrigger={() => (
+                                <span className="flex items-center">
+                                    <HiBell/><sup className="text-xs text-gray-400">{unreadNotifications.length}</sup>
 
-                                        <svg
-                                            className="ms-2 -me-0.5 h-4 w-4"
-                                            xmlns="http://www.w3.org/2000/svg"
-                                            viewBox="0 0 20 20"
-                                            fill="currentColor"
-                                        >
-                                            <path
-                                                fillRule="evenodd"
-                                                d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                                                clipRule="evenodd"
-                                            />
-                                        </svg>
-                                    </button>
                                 </span>
-                            </Dropdown.Trigger>
+                            )}
+                        >
+                            <Dropdown.Item className="text-xs text-blue-500" href={route('notifications.read-all')}>Read all notifictions</Dropdown.Item>
 
-                            <Dropdown.Content>
-                                <Dropdown.Link
-                                    href={route("setting.profile.edit")}
-                                >
-                                    Profile
-                                </Dropdown.Link>
-                                <Dropdown.Link
-                                    href={route("logout")}
-                                    method="post"
-                                    as="button"
-                                >
-                                    Log Out
-                                </Dropdown.Link>
-                            </Dropdown.Content>
+                            {unreadNotifications.slice(0, 5).map((notification, index) => (
+                                <Dropdown.Item key={index}>
+                                    {truncateText(notification.data.message, 25)}
+                                    {
+                                        notification.data.fileName ? (
+                                            <a href={route('download.file', { id: notification.id, fileName: notification.data.fileName })} className="text-blue-500 hover:underline ml-2">Download</a>
+                                        ) : (
+                                            <sup className="text-blue-500 ml-2 text-xs hover:underline" onClick={() => markNotificationAsRead(notification.id)}>Mark as Read</sup>
+                                        )
+                                    }
+
+                                </Dropdown.Item>
+
+                            ))}
+                            {notifications.length > 5 && (
+                                <Dropdown.Item>
+                                    <a href="#" className="text-blue-500">View all notifications</a>
+                                </Dropdown.Item>
+                            )}
                         </Dropdown>
+
+                        <hr className="w-px h-6 bg-slate-200 dark:bg-slate-700 border-none" />
+                        <Dropdown label="" dismissOnClick={false} renderTrigger={() => <span>{user.store.store_name}</span>}>
+                            <Dropdown.Item href={route("setting.profile.edit")}>Profile</Dropdown.Item>
+                            <Dropdown.Item href={route("logout")} formMethod="post">Sign out</Dropdown.Item>
+                        </Dropdown>
+
                     </div>
                 </div>
             </div>

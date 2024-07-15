@@ -3,15 +3,21 @@ import { formatRupiah } from "@/utils/Utils";
 import { PageProps, Product } from "@/types";
 import Barcode from "react-barcode";
 
-export default function Print({ products }: PageProps) {
+interface PrintProps {
+    product: Product;
+    loop: number;
+}
+export default function Print({ product, loop }: PrintProps) {
     // useEffect(() => {
     //     window.print(); // Memanggil window.print() saat komponen dimuat
     // }, []); // Dependensi kosong agar useEffect hanya berjalan sekali saat komponen dimuat
-    console.log(products);
     return (
 
-        <div className="grid grid-cols-4">
-            {/* <Barcode value={barcode}/> */}
+        <div className="grid grid-cols-3 gap-4">
+            {Array.from({ length: loop }).map((_, index) => (
+                    <Barcode value={product.barcode} />
+
+            ))}
         </div>
     );
 }

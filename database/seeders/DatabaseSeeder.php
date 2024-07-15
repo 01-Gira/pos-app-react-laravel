@@ -33,10 +33,5 @@ class DatabaseSeeder extends Seeder
 
         Transaction::factory(5000)->create();
         Purchase::factory(5000)->create();
-
-        // TransactionDetail::factory(2000)->create();
-
-
-
     }
 }

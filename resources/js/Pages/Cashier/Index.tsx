@@ -158,6 +158,7 @@ export default function Index({ title, auth, flash }: PageProps) {
                                     const newTransactionDetail: TransactionDetail =
                                         {
                                             id: product.id,
+                                            transaction_id: '',
                                             quantity: 1,
                                             discount: product.discount,
                                             price: product.price,

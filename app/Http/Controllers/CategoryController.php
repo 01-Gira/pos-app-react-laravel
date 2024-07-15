@@ -14,7 +14,9 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use App\Imports\CategoryImport;
+use App\Exports\CategoriesExport;
 use Maatwebsite\Excel\Facades\Excel;
+
 
 class CategoryController extends Controller
 {
@@ -186,7 +188,7 @@ class CategoryController extends Controller
     }
 
     public function importData(Request $request)
-     {
+    {
         try {
             $logs = new Logs();
 
@@ -214,6 +216,16 @@ class CategoryController extends Controller
                 'indctr' => 0,
                 'message' => 'Oops Something Went Wrong! Message : ' . $th->getMessage()
             ]);
+        }
+    }
+
+    public function exportData()
+    {
+        if(Auth::check()){
+
+            return Excel::download(new CategoriesExport, 'categories.xlsx');
+        }else{
+            return redirect()->route('/login');
         }
     }
 }

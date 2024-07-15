@@ -30,7 +30,7 @@ class ProductsImport implements ToModel, WithHeadingRow, SkipsEmptyRows, WithVal
     public function rules(): array
     {
         return [
-            'barcode' => 'required|numeric|min:12|max:13|unique:'.Product::class,
+            'barcode' => 'required|numeric|min:12|unique:'.Product::class,
             'name' => 'required|string|max:225',
             'category' => 'required|uuid',
             'stock' => 'required|numeric',

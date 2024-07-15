@@ -1,5 +1,9 @@
 <?php
 
+
+use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\DownloadController;
+
 use App\Http\Controllers\CashierController;
 use App\Http\Controllers\PurchaseProductController;
 
@@ -16,6 +20,10 @@ use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
+use App\Exports\ProductsExport;
+use App\Exports\CategoriesExport;
+use Maatwebsite\Excel\Facades\Excel;
+
 Route::get('/', function () {
     return Inertia::render('Welcome', [
         'canLogin' => Route::has('login'),
@@ -31,6 +39,13 @@ Route::get('/dashboard', function () {
 
 
 Route::middleware('auth')->group(function () {
+
+    Route::get('notifications', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::put('notifications', [NotificationController::class, 'update'])->name('notifications.update');
+    Route::get('notifications/read-all', [NotificationController::class, 'markAsReadAll'])->name('notifications.read-all');
+
+    Route::get('/download', [DownloadController::class, 'download'])->name('download.file');
+
 
     Route::group(['prefix' => 'transaction'], function() {
 
@@ -53,22 +68,28 @@ Route::middleware('auth')->group(function () {
         Route::get('products/get-data/{barcode}', [ProductController::class, 'getDataProduct'])->name('master.products.get-data');
         Route::post('products/add-discount/{id}', [ProductController::class, 'addDiscountProduct'])->name('master.products.add-discount');
         Route::post('products/import-data', [ProductController::class, 'importData'])->name('master.products.import-data');
-        Route::get('products/print-barcode/{barcodes}', [ProductController::class, 'printBarcode'])->name('master.products.print-barcode');
+
+
+        Route::get('products/print-barcode/{product}/{value}', [ProductController::class, 'printBarcode'])->name('master.products.print-barcode');
 
         Route::resource('discounts', DiscountController::class)->names('master.discounts');
 
+
         Route::resource('categories', CategoryController::class)->names('master.categories');
+
+
         Route::post('categories/import-data', [CategoryController::class, 'importData'])->name('master.categories.import-data');
 
         Route::resource('suppliers', SupplierController::class)->names('master.suppliers');
         Route::get('suppliers/get-data/{uniq_code}', [SupplierController::class, 'getDataSupplier'])->name('master.suppliers.get-data');
         Route::post('suppliers/import-data',  [SupplierController::class, 'importData'])->name('master.suppliers.import-data');
 
+
+
     });
 
     Route::group(['prefix' => 'report'], function() {
 
-        // Route::resource('transactions', ReportTransactionController::class)->name('report.transactions');
         Route::get('transactions', [ReportTransactionController::class, 'index'])->name('report.transactions.index');
 
         Route::get('transactions/get-transactions', [ReportTransactionController::class, 'getTransactions'])->name('report.transactions.get-transactions');
@@ -82,11 +103,17 @@ Route::middleware('auth')->group(function () {
 
     });
 
-
-
     Route::get('/setting/profile', [ProfileController::class, 'edit'])->name('setting.profile.edit');
     Route::patch('/setting/profile', [ProfileController::class, 'update'])->name('setting.profile.update');
     Route::delete('/setting/profile', [ProfileController::class, 'destroy'])->name('setting.profile.destroy');
 });
+
+
+Route::get('/categories/export-data/{format}', [CategoryController::class, 'exportData'])->name('master.exports.categories.export-data');
+
+Route::get('/products/export-data/{format}', [ProductController::class, 'exportData'])->name('master.exports.products.export-data');
+
+Route::get('/transactions/export-data/{type}', [ReportTransactionController::class, 'exportData'])->name('report.exports.transactions.export-data');
+
 
 require __DIR__.'/auth.php';

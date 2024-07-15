@@ -16,6 +16,15 @@ use Inertia\Response;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Redirect;
 use Carbon\Carbon;
+use Maatwebsite\Excel\Facades\Excel;
+
+use App\Exports\TransactionsExport;
+use App\Exports\TransactionDetailsExport;
+use App\Exports\PurchasesExport;
+use App\Exports\PurchaseDetailsExport;
+
+use App\Notifications\ExportCompleted;
+use App\Jobs\NotifyUserOfCompletedExport;
 
 class ReportTransactionController extends Controller
 {
@@ -30,40 +39,19 @@ class ReportTransactionController extends Controller
 
     public function getTransactions(Request $request)
     {
-        $search = $request->input('search');
-        $startDate = $request->input('start_date');
-        $endDate = $request->input('end_date');
-        $status = $request->input('status');
-        $payment_method = $request->input('payment_method');
-        $category = $request->input('category');
+        $filters = [
+            'search' => $request->input('search'),
+            'startDate' => $request->input('start_date'),
+            'endDate' => $request->input('end_date'),
+            'status' => $request->input('status'),
+            'payment_method' => $request->input('payment_method'),
+            'category' => $request->input('category'),
+        ];
 
         $perPage = $request->input('per_page', 5);
         $page = $request->input('page', 1);
 
-        $transactions = Transaction::query()
-            ->when($search, function ($query, $search) {
-                return $query->where('id', 'like', "%{$search}%")
-                            ->orWhere('status', 'like', "%{$search}%");
-            })
-            ->when($startDate, function ($query, $startDate) {
-                return $query->whereDate('transaction_date', '>=', $startDate);
-            })
-            ->when($endDate, function ($query, $endDate) {
-                return $query->whereDate('transaction_date', '<=', $endDate);
-            })
-            ->when($status, function ($query, $status) {
-                return $query->where('status', $status);
-            })
-            ->when($payment_method, function ($query, $payment_method) {
-                return $query->where('payment_method', $payment_method);
-            })
-            ->when($category, function ($query, $category) {
-                return $query->whereHas('transactionDetails.product.category', function ($query) use ($category) {
-                    $query->where('id', $category);
-                });
-            })
-            ->with('transactionDetails.product.category')
-            ->orderByDesc('transaction_date')
+        $transactions = Transaction::filter($filters)
             ->paginate($perPage, ['*'], 'page', $page);
 
 
@@ -75,51 +63,30 @@ class ReportTransactionController extends Controller
                 'total_items' => $transactions->total(),
                 'per_page' => $transactions->perPage(),
             ],
-            'start_date' => $startDate,
-            'end_date' => $endDate,
-            'search' => $search,
-            'status' => $status,
-            'payment_method' => $payment_method,
-            'category' => $category
+            'start_date' => $filters['startDate'],
+            'end_date' => $filters['endDate'],
+            'search' => $filters['search'],
+            'status' => $filters['status'],
+            'payment_method' => $filters['payment_method'],
+            'category' => $filters['category']
         ]);
     }
 
     public function getPurchases(Request $request)
     {
-        $search = $request->input('search');
-        $startDate = $request->input('start_date');
-        $endDate = $request->input('end_date');
-        $status = $request->input('status');
-        $payment_method = $request->input('payment_method');
-        $category = $request->input('category');
+        $filters = [
+            'search' => $request->input('search'),
+            'startDate' => $request->input('start_date'),
+            'endDate' => $request->input('end_date'),
+            'status' => $request->input('status'),
+            'payment_method' => $request->input('payment_method'),
+            'category' => $request->input('category'),
+        ];
 
         $perPage = $request->input('per_page', 5);
         $page = $request->input('page', 1);
 
-        $purchases = Purchase::query()
-            ->when($search, function ($query, $search) {
-                return $query->where('id', 'like', "%{$search}%")
-                            ->orWhere('status', 'like', "%{$search}%");
-            })
-            ->when($startDate, function ($query, $startDate) {
-                return $query->whereDate('purchase_date', '>=', $startDate);
-            })
-            ->when($endDate, function ($query, $endDate) {
-                return $query->whereDate('purchase_date', '<=', $endDate);
-            })
-            ->when($status, function ($query, $status) {
-                return $query->where('status', $status);
-            })
-            ->when($payment_method, function ($query, $payment_method) {
-                return $query->where('payment_method', $payment_method);
-            })
-            ->when($category, function ($query, $category) {
-                return $query->whereHas('purchaseDetails.product.category', function ($query) use ($category) {
-                    $query->where('id', $category);
-                });
-            })
-            ->with('purchaseDetails.product.category')
-            ->orderByDesc('purchase_date')
+        $purchases = Purchase::filter($filters)
             ->paginate($perPage, ['*'], 'page', $page);
 
         return response()->json([
@@ -130,12 +97,12 @@ class ReportTransactionController extends Controller
                 'total_items' => $purchases->total(),
                 'per_page' => $purchases->perPage(),
             ],
-            'start_date' => $startDate,
-            'end_date' => $endDate,
-            'search' => $search,
-            'status' => $status,
-            'payment_method' => $payment_method,
-            'category' => $category
+            'start_date' => $filters['startDate'],
+            'end_date' => $filters['endDate'],
+            'search' => $filters['search'],
+            'status' => $filters['status'],
+            'payment_method' => $filters['payment_method'],
+            'category' => $filters['category']
         ]);
     }
 
@@ -152,6 +119,64 @@ class ReportTransactionController extends Controller
         }
 
         return response()->json(['msg' => 'Successfully get data', 'data' => $data]);
+    }
 
+    public function exportData(Request $request, $type)
+    {
+        try {
+
+            $filters = $request->only(['start_date', 'end_date', 'status', 'payment_method']);
+
+            $fileName = $type . ' ' . $filters['start_date'] . ' - ' .$filters['end_date'] . '.xlsx';
+
+            $filePath = 'exports/' . $fileName;
+
+            $array = [
+                'type' => $type,
+                'fileName' => $fileName,
+            ];
+
+            // dd($type);
+
+            switch($type) {
+                case 'Transactions':
+                    (new TransactionsExport($filters))->store($filePath, 'public')->chain([
+                        new NotifyUserOfCompletedExport(request()->user(), $array),
+                    ]);
+                    break;
+                case 'Purchases':
+                    (new PurchasesExport($filters))->store($filePath, 'public')->chain([
+                        new NotifyUserOfCompletedExport(request()->user(), $array),
+                    ]);
+                    break;
+                case 'Transaction Details':
+                    (new TransactionDetailsExport($filters))->store($filePath, 'public')->chain([
+                        new NotifyUserOfCompletedExport(request()->user(), $array),
+                    ]);
+                    break;
+                case 'Purchase Details':
+                    (new PurchaseDetailsExport($filters))->store($filePath, 'public')->chain([
+                        new NotifyUserOfCompletedExport(request()->user(), $array),
+                    ]);
+                    break;
+                default :
+                    return back()->with([
+                        'type_message' => 'warning',
+                        'message' => 'Type is unknown'
+                    ]);
+            }
+
+            return back()->with([
+                'type_message' => 'success',
+                'message' => 'Process export is on process, you will be notified when is ready to download'
+            ]);
+
+        } catch (\Throwable $th) {
+            // throw $th;
+            return to_route('report.transactions.index')->with([
+                'type_message' => 'warning',
+                'message' => 'Oops Something Went Wrong! Message : ' . $th
+            ]);
+        }
     }
 }

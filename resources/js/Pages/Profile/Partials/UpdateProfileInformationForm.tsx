@@ -6,6 +6,7 @@ import { Link, useForm, usePage } from "@inertiajs/react";
 import { Transition } from "@headlessui/react";
 import { FormEventHandler } from "react";
 import { PageProps } from "@/types";
+import { Textarea } from "flowbite-react";
 
 export default function UpdateProfileInformation({
     mustVerifyEmail,
@@ -22,6 +23,8 @@ export default function UpdateProfileInformation({
         useForm({
             store_name: user.store.store_name,
             email: user.email,
+            address: user.store.address,
+            phone_no: user.store.phone_no,
         });
 
     const submit: FormEventHandler = (e) => {
@@ -73,6 +76,35 @@ export default function UpdateProfileInformation({
                     />
 
                     <InputError className="mt-2" message={errors.email} />
+                </div>
+
+                <div>
+                    <InputLabel htmlFor="address" value="Address" />
+
+                    <TextInput
+                        id="address"
+                        type="text"
+                        className="mt-1 block w-full"
+                        value={data.address}
+                        onChange={(e) => setData("address", e.target.value)}
+                        required
+                    />
+
+                    <InputError className="mt-2" message={errors.address} />
+                </div>
+
+                <div>
+                    <InputLabel htmlFor="phone_no" value="Phone Number" />
+
+                    <Textarea
+                        id="phone_no"
+                        className="mt-1 block w-full"
+                        value={data.phone_no}
+                        onChange={(e) => setData("phone_no", e.target.value)}
+                        required
+                    ></Textarea>
+
+                    <InputError className="mt-2" message={errors.phone_no} />
                 </div>
 
                 {mustVerifyEmail && user.email_verified_at === null && (

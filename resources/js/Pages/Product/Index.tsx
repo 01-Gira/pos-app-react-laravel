@@ -1,6 +1,6 @@
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import { PageProps, Product } from "@/types";
-import { Head, router, useForm } from "@inertiajs/react";
+import { Head, Link, router, useForm } from "@inertiajs/react";
 import { Button, Datepicker, FileInput, FloatingLabel, Label, Modal, Select, TextInput } from "flowbite-react";
 import { ChangeEvent, useEffect, useState } from "react";
 import DataTable, { TableColumn } from "react-data-table-component";
@@ -11,6 +11,7 @@ import Swal from "sweetalert2";
 import { classCustomSwal, exportExcel, exportPDF } from "@/utils/Utils";
 import axios from "axios";
 import Barcode from "react-barcode";
+import withReactContent from "sweetalert2-react-content";
 
 export default function Index({
     title,
@@ -19,20 +20,20 @@ export default function Index({
     pagination,
     search,
     flash,
-    start_date, end_date, status, categories
+    start_date, end_date, category, categories
 }: PageProps) {
     const [pending, setPending] = useState(false);
     const [currentPage, setCurrentPage] = useState(pagination.current_page);
     const [searchQuery, setSearchQuery] = useState(search || "");
     const [rowsPerPage, setRowsPerPage] = useState(pagination.per_page);
-    const [startDate, setStartDate] = useState(format(new Date(start_date), "yyyy-MM-dd"));
-    const [endDate, setEndDate] = useState(format(new Date(end_date), "yyyy-MM-dd"));
-    const [statusFilter, setStatusFilter] = useState(status || "");
+    // const [startDate, setStartDate] = useState(format(new Date(start_date), "yyyy-MM-dd"));
+    // const [endDate, setEndDate] = useState(format(new Date(end_date), "yyyy-MM-dd"));
+    const [categoryFilter, setCategoryFilter] = useState(category || "");
 
     const onPageChange = (page: number) => {
         router.get(
             route("master.products.index"),
-            { search: searchQuery, page, start_date: startDate, end_date: endDate, status: statusFilter },
+            { search: searchQuery, page, category: categoryFilter },
             {
                 preserveState: true,
                 onStart:() => setPending(true),
@@ -46,7 +47,7 @@ export default function Index({
         setRowsPerPage(newRowsPerPage);
         router.get(
             route("master.products.index"),
-            { search: searchQuery, page, per_page: newRowsPerPage, start_date: startDate, end_date: endDate, status: statusFilter },
+            { search: searchQuery, page, per_page: newRowsPerPage, category: categoryFilter },
             {
                 preserveState: true,
                 onStart:() => setPending(true),
@@ -60,7 +61,7 @@ export default function Index({
         setSearchQuery(event.target.value);
         router.get(
             route("master.products.index"),
-            { search: event.target.value, page: 1, start_date: startDate, end_date: endDate, status: statusFilter },
+            { search: event.target.value, page: 1, category: categoryFilter },
             {
                 preserveState: true,
                 onStart:() => setPending(true),
@@ -69,43 +70,43 @@ export default function Index({
         );
     };
 
-    const onStartDateChange = (date: Date | null) => {
-        if (date) {
-            const formattedDate = format(date, "yyyy-MM-dd");
-            setStartDate(formattedDate);
-            router.get(
-                route("master.products.index"),
-                { search: searchQuery, page: 1, start_date: formattedDate, end_date: endDate, status: statusFilter },
-                {
-                    preserveState: true,
-                    onStart:() => setPending(true),
-                    onFinish:() => setPending(false)
-                }
-            );
-        }
-    };
+    // const onStartDateChange = (date: Date | null) => {
+    //     if (date) {
+    //         const formattedDate = format(date, "yyyy-MM-dd");
+    //         setStartDate(formattedDate);
+    //         router.get(
+    //             route("master.products.index"),
+    //             { search: searchQuery, page: 1, start_date: formattedDate, end_date: endDate, category: categoryFilter },
+    //             {
+    //                 preserveState: true,
+    //                 onStart:() => setPending(true),
+    //                 onFinish:() => setPending(false)
+    //             }
+    //         );
+    //     }
+    // };
 
-    const onEndDateChange = (date: Date | null) => {
-        if (date) {
-            const formattedDate = format(date, "yyyy-MM-dd");
-            setEndDate(formattedDate);
-            router.get(
-                route("master.products.index"),
-                { search: searchQuery, page: 1, start_date: startDate, end_date: formattedDate, status: statusFilter },
-                {
-                    preserveState: true,
-                    onStart:() => setPending(true),
-                    onFinish:() => setPending(false)
-                }
-            );
-        }
-    };
+    // const onEndDateChange = (date: Date | null) => {
+    //     if (date) {
+    //         const formattedDate = format(date, "yyyy-MM-dd");
+    //         setEndDate(formattedDate);
+    //         router.get(
+    //             route("master.products.index"),
+    //             { search: searchQuery, page: 1, start_date: startDate, end_date: formattedDate, category: categoryFilter },
+    //             {
+    //                 preserveState: true,
+    //                 onStart:() => setPending(true),
+    //                 onFinish:() => setPending(false)
+    //             }
+    //         );
+    //     }
+    // };
 
-    const onStatusChange = (event: ChangeEvent<HTMLSelectElement>) => {
-        setStatusFilter(event.target.value);
+    const onCategoryChange = (event: ChangeEvent<HTMLSelectElement>) => {
+        setCategoryFilter(event.target.value);
         router.get(
             route("master.products.index"),
-            { search: searchQuery, page: 1, start_date: startDate, end_date: endDate, status: event.target.value },
+            { search: searchQuery, page: 1, category: event.target.value },
               {
                 preserveState: true,
                 onStart:() => setPending(true),
@@ -160,6 +161,7 @@ export default function Index({
         put,
         post,
         processing,
+        get,
         errors,
         reset,
     } = useForm({
@@ -188,9 +190,28 @@ export default function Index({
     };
 
     const printBarcode = async (id: string) => {
-        const url = route("master.products.print-barcode", id);
+        withReactContent(Swal).fire({
+            title: <i>How many qrcode you want to generate?</i>,
+            input: 'number',
+            showCancelButton: true,
+            showConfirmButton: true,
+            showLoaderOnConfirm: true,
+            preConfirm: async () => {
+              const input = Swal.getInput()?.value;
+              console.log();
+              if(input == ''){
+                Swal.fire({
+                    icon: "warning",
+                    title: `Input can not be empty`,
+                    confirmButtonText: 'OK'
+                });
+              }else{
+                const url = route("master.products.print-barcode", {product: id, value: input});
 
-        await window.open(url, "_blank");
+                await window.open(url, "_blank");
+              }
+            },
+          })
     }
 
     const columns: TableColumn<Product>[] = [
@@ -327,6 +348,11 @@ export default function Index({
     };
 
 
+    const handleExport = () => {
+
+    }
+
+
     return (
         <AuthenticatedLayout
             user={auth.user}
@@ -340,8 +366,8 @@ export default function Index({
             <Head title={title} />
             <div className="p-7 border border-gray-200 dark:border-gray-700 shadow-lg rounded-lg">
                 <h1 className="dark:text-white text-lg">{title}</h1>
-                <div className="grid grid-cols-3 gap-4 mt-5 mb-5">
-                    <div>
+                <div className="grid grid-cols-1 gap-4 mt-5 mb-5">
+                    {/* <div>
                         <Label
                             htmlFor="start_date"
                             value="Start Date"
@@ -359,13 +385,13 @@ export default function Index({
                             onSelectedDateChanged={date => onEndDateChange(date)}
                             value={endDate}
                         />
-                    </div>
+                    </div> */}
                     <div>
-                        <Label htmlFor="status" value="Status" />
+                        <Label htmlFor="category" value="Category" />
                         <Select
-                            id="status"
-                            value={statusFilter}
-                            onChange={onStatusChange}
+                            id="category"
+                            value={categoryFilter}
+                            onChange={onCategoryChange}
                             required
                         >
                             <option value="">Select</option>
@@ -398,9 +424,9 @@ export default function Index({
                 <div className="flex justify-between items-center mt-4">
                     <div className="flex space-x-4">
                         <Button.Group>
-                            <Button color="red">PDF</Button>
-                            <Button color="gray" onClick={exportExcel}>Excel</Button>
-                            <Button color="gray">CSV</Button>
+                            <Button href={route('master.exports.products.export-data', 'xlsx')} color="green">
+                                Excel
+                            </Button>
                         </Button.Group>
                     </div>
                     <div className="flex justify-end">

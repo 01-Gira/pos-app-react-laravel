@@ -33,4 +33,18 @@ class Product extends Model
         return $this->hasMany(PurchaseDetail::class);
     }
 
+    public function scopeFilter($query, array $filters)
+    {
+        return $query
+        ->when($filters['search'], function ($query, $filters) {
+            return $query->where('product_name', 'like', "%{$filters['search']}%")
+                         ->orWhere('barcode', 'like', "%{$filters['search']}%");
+        })
+        ->when($filters['category'], function ($query, $category) {
+            return $query->where('category_id', $category);
+        })
+        ->with('category', 'discount')
+        ->orderByDesc('created_at');
+    }
+
 }

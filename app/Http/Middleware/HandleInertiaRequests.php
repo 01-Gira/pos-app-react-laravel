@@ -31,15 +31,18 @@ class HandleInertiaRequests extends Middleware
     {
         $user = $request->user();
 
-        // Pastikan user terautentikasi sebelum memuat relasi 'store'
+        $notifications = [];
         if ($user) {
             $user->load('store');
+            $notifications = $user->unreadNotifications;
         }
-        
+
+
         return array_merge(parent::share($request), [
             'auth' => [
                 'user' => $user,
             ],
+            'notifications' => $notifications,
             'flash' => [
                 'type_message' => fn () => $request->session()->get('type_message'),
                 'message' => fn () => $request->session()->get('message')

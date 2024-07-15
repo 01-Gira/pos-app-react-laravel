@@ -1,8 +1,18 @@
 export interface User {
     id: string;
     store: Store;
+    notifications: Notification
     email: string;
     email_verified_at: string;
+}
+
+export interface Notification {
+    id: string,
+    data: {
+        message: string;
+        fileName?: string;
+    };
+    read_at : Date,
 }
 
 export interface Store {
@@ -50,6 +60,7 @@ export interface ProductTransaction {
 
 export interface TransactionDetail {
     id: string;
+    transaction_id: string;
     quantity: number;
     discount: number;
     price: number;
@@ -74,6 +85,7 @@ export interface Transaction {
 
 export interface PurchaseDetail {
     id: string;
+    purchase_id: string;
     quantity: number;
     discount: number;
     price: number;
@@ -88,7 +100,7 @@ export interface Purchase {
     id: string;
     supplier_id: string;
     purchase_date: Date;
-    purchase_details: TransactionDetail[];
+    purchase_details: PurchaseDetail[];
     payment_method: any;
     subtotal: number;
     ppn: number;
@@ -96,6 +108,7 @@ export interface Purchase {
     total_payment: number;
     created_at: Date;
     updated_at: Date;
+    supplier : Supplier;
 }
 
 export interface HoldTransaction {
@@ -164,6 +177,7 @@ export type PageProps<
     auth: {
         user: User;
     };
+    notifications: Notification[];
     purchase: Purchase;
     transaction: Transaction;
     transactions: Transaction[];
@@ -179,4 +193,5 @@ export type PageProps<
     start_date: Date;
     end_date: Date;
     status: string;
+    category: string;
 };

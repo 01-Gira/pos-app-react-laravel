@@ -21,4 +21,15 @@ class PurchaseDetail extends Model
     {
         return $this->belongsTo(Purchase::class);
     }
+
+    public function scopeFilter($query, array $filters)
+    {
+        return $query
+        ->when(isset($filters['start_date']), function ($query) use ($filters) {
+            return $query->whereDate('purchase_details.created_at', '>=', $filters['start_date']);
+        })
+        ->when(isset($filters['end_date']), function ($query) use ($filters) {
+            return $query->whereDate('purchase_details.created_at', '<=', $filters['end_date']);
+        });
+    }
 }

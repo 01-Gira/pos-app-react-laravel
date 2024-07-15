@@ -15,6 +15,7 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use App\Imports\ProductsImport;
+use App\Exports\ProductsExport;
 use Maatwebsite\Excel\Facades\Excel;
 
 class ProductController extends Controller
@@ -24,30 +25,14 @@ class ProductController extends Controller
      */
     public function index(Request $request)
     {
-        $search = $request->input('search');
-        $startDate = $request->input('start_date');
-        $startDate = empty($startDate) ? Carbon::now()->firstOfMonth()->format('Y-m-d') : $startDate;
-        $endDate = $request->input('end_date');
-        $endDate = empty($endDate) ? Carbon::now()->endOfMonth()->format('Y-m-d') : $endDate;
-        $status = $request->input('status');
+        $filters = [
+            'search' => $request->input('search'),
+            'category' => $request->input('category')
+        ];
+
         $perPage = $request->input('per_page', 5);
 
-        $products = Product::query()
-            ->when($search, function ($query, $search) {
-                return $query->where('product_name', 'like', "%{$search}%")
-                             ->orWhere('barcode', 'like', "%{$search}%");
-            })
-            ->when($startDate, function ($query, $startDate) {
-                return $query->whereDate('created_at', '>=', $startDate);
-            })
-            ->when($endDate, function ($query, $endDate) {
-                return $query->whereDate('created_at', '<=', $endDate);
-            })
-            ->when($status, function ($query, $status) {
-                return $query->where('category_id', $status);
-            })
-            ->with('category', 'discount')
-            ->orderByDesc('created_at')
+        $products = Product::filter($filters)
             ->paginate($perPage);
 
         return Inertia::render('Product/Index', [
@@ -60,10 +45,8 @@ class ProductController extends Controller
                 'total_items' => $products->total(),
                 'per_page' => $products->perPage(),
             ],
-            'search' => $search,
-            'start_date' => $startDate,
-            'end_date' => $endDate,
-            'status' => $status,
+            'search' => $filters['search'],
+            'category' => $filters['category'],
             'categories' => Category::all()
         ]);
     }
@@ -330,8 +313,8 @@ class ProductController extends Controller
      * Import data products from Excel.
      */
 
-     public function importData(Request $request)
-     {
+    public function importData(Request $request)
+    {
         try {
             $logs = new Logs();
 
@@ -360,13 +343,39 @@ class ProductController extends Controller
                 'message' => 'Oops Something Went Wrong! Message : ' . $th->getMessage()
             ]);
         }
-     }
+    }
 
-    public function printBarcode($barcodes)
+    public function exportData($format)
     {
-        dd($barcodes);
-        // return Inertia::render('Product/Print', [
-        //     'barcode' => $product->barcode
-        // ]);
+        try {
+
+            $export = new ProductsExport();
+            switch ($format) {
+                case 'xlsx':
+                    return $export->download('products.xlsx');
+                case 'csv':
+                    return $export->download('products.csv', \Maatwebsite\Excel\Excel::CSV);
+                case 'pdf':
+                    return $export->download('products.pdf', \Maatwebsite\Excel\Excel::DOMPDF);
+                default:
+                    return to_route('master.products.index')->with([
+                        'type_message' => 'warning',
+                        'message' => 'Oops Something Went Wrong! Message : Invalid format'
+                    ]);
+            }
+        } catch (\Throwable $th) {
+            return to_route('master.products.index')->with([
+                'type_message' => 'warning',
+                'message' => 'Oops Something Went Wrong! Message : ' . $th
+            ]);
+        }
+    }
+
+    public function printBarcode(Product $product, $loop)
+    {
+        return Inertia::render('Product/Print', [
+            'product' => $product,
+            'loop' => $loop
+        ]);
     }
 }

@@ -2,7 +2,7 @@ import BarChartComponent from "@/Components/BarChartComponent";
 import LineChartComponent from "@/Components/LineChartComponent";
 import PieChartComponent from "@/Components/PieChartComponent";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
-import { PageProps, Purchase, PurchaseDetail, Transaction, TransactionDetail } from "@/types";
+import { PageProps, Purchase, PurchaseDetail, Supplier, Transaction, TransactionDetail } from "@/types";
 import { formatRupiah, getFirstDayOfMonth, getLastDayOfMonth, randomColor } from "@/utils/Utils";
 import { Head, router } from "@inertiajs/react";
 import axios from "axios";
@@ -19,8 +19,6 @@ export default function Transactions({ title, auth, flash, categories }: PagePro
 
     const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [purchases, setPurchases] = useState<Purchase[]>([]);
-
-    const [dataDetails, setDataDetails] = useState<TransactionDetail[]>([]);
 
     const [transactionPagination, setTransactionPagination] = useState<any>({});
     const [purchasePagination, setPurchasePagination] = useState<any>({});
@@ -270,42 +268,6 @@ export default function Transactions({ title, auth, flash, categories }: PagePro
     };
 
 
-    const doubleClickTransactionDetail = async (row: Transaction) => {
-        setPendingTransactions(true);
-        try {
-            const res = await axios.get(route('report.transactions.get-detail-products', row.id), {
-                params: { type: 'cashier' }
-            });
-            const data = res.data.data;
-            if (data) {
-                setDataDetails(data);
-            }
-        } catch (error) {
-            console.error("Error fetching transaction details:", error);
-
-        } finally {
-            setPendingTransactions(false);
-        }
-    };
-
-    const doubleClickPurchaseDetail = async (row: Purchase) => {
-        setPendingTransactions(true);
-        try {
-            const res = await axios.get(route('report.transactions.get-detail-products', row.id), {
-                params: { type: 'purchase' }
-            });
-            const data = res.data.data;
-            if (data) {
-                setDataDetails(data);
-            }
-        } catch (error) {
-            console.error("Error fetching purchase details:", error);
-
-        } finally {
-            setPendingTransactions(false);
-        }
-    };
-
     const columnsTransaction: TableColumn<Transaction>[] = [
         {
             name: "Transaction ID",
@@ -353,6 +315,11 @@ export default function Transactions({ title, auth, flash, categories }: PagePro
             sortable: true,
         },
         {
+            name: "Supplier Name",
+            selector: (row: Purchase) => row.supplier.supplier_name,
+            sortable: true,
+        },
+        {
             name: "Payment Method",
             selector: (row: Purchase) => row.payment_method,
             sortable: true,
@@ -385,7 +352,50 @@ export default function Transactions({ title, auth, flash, categories }: PagePro
         },
     ];
 
-    const columnsDetails: TableColumn<PurchaseDetail>[] = [
+    const columnsTransactionDetails: TableColumn<TransactionDetail>[] = [
+        {
+            name: "Transaction ID",
+            selector: (row: TransactionDetail) => row.transaction_id,
+            sortable: true,
+        },
+        {
+            name: "Product Name",
+            selector: (row: TransactionDetail) => row.product?.product_name,
+            sortable: true,
+        },
+        {
+            name: "Category",
+            selector: (row: TransactionDetail) => row.product?.category?.category_name || '',
+            sortable: true,
+        },
+        {
+            name: "Quantity",
+            selector: (row: TransactionDetail) => row.quantity,
+            sortable: true,
+        },
+        {
+            name: "Price",
+            selector: (row: TransactionDetail) => formatRupiah(row.price),
+            sortable: true,
+        },
+        {
+            name: "Discount",
+            selector: (row: TransactionDetail) => row.discount,
+            sortable: true,
+        },
+        {
+            name: "Total Price",
+            selector: (row: TransactionDetail) => formatRupiah(row.total_price),
+            sortable: true,
+        }
+    ];
+
+    const columnsPurchaseDetails: TableColumn<PurchaseDetail>[] = [
+        {
+            name: "Purchase ID",
+            selector: (row: PurchaseDetail) => row.purchase_id,
+            sortable: true,
+        },
         {
             name: "Product Name",
             selector: (row: PurchaseDetail) => row.product?.product_name,
@@ -434,32 +444,6 @@ export default function Transactions({ title, auth, flash, categories }: PagePro
     const totalIncome = transactions.reduce((total, transaction) => total + transaction.total_payment, 0);
 
     const totalExpenses = purchases.reduce((total, purchase) => total + purchase.total_payment, 0);
-
-    const contextActionsTransaction = useMemo(() => {
-        const handleDeleteTransaction = () => {
-            if (window.confirm(`Are you sure you want to delete:\r ${selectedRowsTransaction.map(r => r.id)}?`)) {
-            }
-        };
-
-        return (
-            <Button onClick={handleDeleteTransaction} style={{ backgroundColor: 'red' }}>
-                Delete
-            </Button>
-        );
-    }, [selectedRowsTransaction, toggleClearedTransaction]);
-
-    const contextActionsPurchase = useMemo(() => {
-        const handleDeletePurchase = () => {
-            if (window.confirm(`Are you sure you want to delete:\r ${selectedRowsPurchase.map(r => r.id)}?`)) {
-            }
-        };
-
-        return (
-            <Button onClick={handleDeletePurchase} style={{ backgroundColor: 'red' }}>
-                Delete
-            </Button>
-        );
-    }, [selectedRowsPurchase, toggleClearedPurchase]);
 
     let dateRange: string[] = [];
 
@@ -642,6 +626,17 @@ export default function Transactions({ title, auth, flash, categories }: PagePro
 
     ];
 
+    const exportHandle = async(type : string) => {
+        const params = new URLSearchParams({
+            start_date: startDate,
+            end_date: endDate,
+            status: statusFilter,
+            payment_method: paymentMethodFilter
+        });
+
+        const url = route('report.exports.transactions.export-data', type ) + '?' + params.toString();
+        window.location.href = url;
+    }
 
     return (
         <AuthenticatedLayout
@@ -757,14 +752,24 @@ export default function Transactions({ title, auth, flash, categories }: PagePro
 
             <div className="p-7 border border-gray-200 dark:border-gray-700 shadow-lg rounded-lg mb-5">
                 <h2>Transactions</h2>
-                <div className="flex justify-end">
-                    <FloatingLabel
-                        variant="outlined"
-                        value={searchQueryTransaction}
-                        onChange={onSearchChangeTransaction}
-                        label="Search..."
-                    />
+                <div className="flex justify-between items-center mt-4">
+                    <div className="flex space-x-4">
+                        <Button.Group>
+                            <Button onClick={() => exportHandle('Transactions')} color="green">
+                                Excel
+                            </Button>
+                        </Button.Group>
+                    </div>
+                    <div className="flex justify-end">
+                        <FloatingLabel
+                            variant="outlined"
+                            value={searchQueryTransaction}
+                            onChange={onSearchChangeTransaction}
+                            label="Search..."
+                        />
+                    </div>
                 </div>
+
                 <div className="overflow-x-auto">
                     <DataTable
                         columns={columnsTransaction}
@@ -779,7 +784,6 @@ export default function Transactions({ title, auth, flash, categories }: PagePro
                         onChangeRowsPerPage={onRowsPerPageChangeTransaction}
                         highlightOnHover
                         persistTableHead
-                        onRowDoubleClicked={doubleClickTransactionDetail}
                         progressPending={pendingTransactions}
                     />
                 </div>
@@ -787,14 +791,24 @@ export default function Transactions({ title, auth, flash, categories }: PagePro
 
             <div className="p-7 border border-gray-200 dark:border-gray-700 shadow-lg rounded-lg mb-5">
                 <h2>Purchases</h2>
-                <div className="flex justify-end">
-                    <FloatingLabel
-                        variant="outlined"
-                        value={searchQueryPurchase}
-                        onChange={onSearchChangePurchase}
-                        label="Search..."
-                    />
+                <div className="flex justify-between items-center mt-4">
+                    <div className="flex space-x-4">
+                        <Button.Group>
+                            <Button onClick={() => exportHandle('Purchases')}  color="green">
+                                Excel
+                            </Button>
+                        </Button.Group>
+                    </div>
+                    <div className="flex justify-end">
+                        <FloatingLabel
+                            variant="outlined"
+                            value={searchQueryPurchase}
+                            onChange={onSearchChangePurchase}
+                            label="Search..."
+                        />
+                    </div>
                 </div>
+
                 <div className="overflow-x-auto">
                     <DataTable
                         columns={columnsPurchase}
@@ -809,7 +823,6 @@ export default function Transactions({ title, auth, flash, categories }: PagePro
                         onChangeRowsPerPage={onRowsPerPageChangePurchase}
                         highlightOnHover
                         persistTableHead
-                        onRowDoubleClicked={doubleClickPurchaseDetail}
                         progressPending={pendingPurchases}
                     />
                 </div>
@@ -818,25 +831,38 @@ export default function Transactions({ title, auth, flash, categories }: PagePro
             <div className="grid grid-cols-2 gap-4">
                 <div className="p-7 border border-gray-200 dark:border-gray-700 shadow-lg rounded-lg mb-5">
                     <h2>Transaction Details</h2>
+                    <div className="flex space-x-4 mt-4">
+                        <Button.Group>
+                            <Button onClick={() => exportHandle('Transaction Details')}  color="green">
+                                Excel
+                            </Button>
+                        </Button.Group>
+                    </div>
                     <DataTable
                         highlightOnHover
                         persistTableHead
                         pagination
                         paginationRowsPerPageOptions={[5, 10, 25, 50, 100]}
-                        columns={columnsDetails}
+                        columns={columnsTransactionDetails}
                         data={transactions.flatMap(value => value.transaction_details)}
                     />
                 </div>
 
                 <div className="p-7 border border-gray-200 dark:border-gray-700 shadow-lg rounded-lg mb-5">
                     <h2>Purchase Details</h2>
-
+                    <div className="flex space-x-4 mt-4">
+                        <Button.Group>
+                            <Button onClick={() => exportHandle('Purchase Details')}  color="green">
+                                Excel
+                            </Button>
+                        </Button.Group>
+                    </div>
                     <DataTable
                         highlightOnHover
                         persistTableHead
                         pagination
                         paginationRowsPerPageOptions={[5, 10, 25, 50, 100]}
-                        columns={columnsDetails}
+                        columns={columnsPurchaseDetails}
                         data={purchases.flatMap(value => value.purchase_details)}
                     />
                 </div>
