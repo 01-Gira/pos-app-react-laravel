@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\Redirect;
 use Inertia\Inertia;
 use Inertia\Response;
 use Illuminate\Validation\Rule;
-
+use Illuminate\Support\Facades\Hash;
 
 class ProfileController extends Controller
 {
@@ -74,5 +74,20 @@ class ProfileController extends Controller
         $request->session()->regenerateToken();
 
         return Redirect::to('/');
+    }
+
+    public function checkPassword(Request $request)
+    {
+        $password = $request->input('password');
+        $user = $request->user();
+        $indctr = 0;
+        $message = 'Incorrect password';
+
+        if (Hash::check($password, $user->password)) {
+            $indctr = 1;
+            $message = 'Password is correct';
+        }
+
+        return response()->json(['indctr' => $indctr, 'message' => $message]);
     }
 }

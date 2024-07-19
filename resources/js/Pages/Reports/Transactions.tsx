@@ -316,7 +316,7 @@ export default function Transactions({ title, auth, flash, categories }: PagePro
         },
         {
             name: "Supplier Name",
-            selector: (row: Purchase) => row.supplier.supplier_name,
+            selector: (row: Purchase) => row.supplier?.supplier_name,
             sortable: true,
         },
         {

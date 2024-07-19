@@ -110,7 +110,7 @@ export default function Index({ title, auth, flash }: PageProps) {
         try {
             setLoading(true);
             const res = await axios.get(
-                route("master.products.get-data", barcode)
+                route("master.products.get-data-barcode", barcode)
             );
             const product = res.data.product;
 
@@ -735,6 +735,7 @@ export default function Index({ title, auth, flash }: PageProps) {
                             <Table.HeadCell>Product name</Table.HeadCell>
                             <Table.HeadCell>Category</Table.HeadCell>
                             <Table.HeadCell>Quantity</Table.HeadCell>
+                            <Table.HeadCell>Type</Table.HeadCell>
                             <Table.HeadCell>Price</Table.HeadCell>
                             <Table.HeadCell>Discount</Table.HeadCell>
                             <Table.HeadCell>Total</Table.HeadCell>
@@ -808,6 +809,9 @@ export default function Index({ title, auth, flash }: PageProps) {
                                                         );
                                                     }}
                                                 />
+                                            </Table.Cell>
+                                            <Table.Cell>
+                                                {detail.product.type}
                                             </Table.Cell>
                                             <Table.Cell>
                                                 {formatRupiah(detail.price)}

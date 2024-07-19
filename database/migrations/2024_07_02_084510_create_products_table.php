@@ -18,6 +18,7 @@ return new class extends Migration
             $table->uuid('category_id');
             $table->bigInteger('stock');
             $table->bigInteger('price');
+            $table->string('type');
             $table->string('picture')->nullable();
             $table->timestamps();
 

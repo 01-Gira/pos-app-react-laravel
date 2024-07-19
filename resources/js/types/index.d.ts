@@ -32,6 +32,7 @@ export interface Product {
     created_at: Date;
     updated_at: Date;
     stock: number;
+    type: string;
     quantity: number;
     price: number;
     total_price: number;
@@ -108,7 +109,7 @@ export interface Purchase {
     total_payment: number;
     created_at: Date;
     updated_at: Date;
-    supplier : Supplier;
+    supplier : Supplier | null;
 }
 
 export interface HoldTransaction {
@@ -170,6 +171,17 @@ export interface ChartDataProps {
     }[];
 }
 
+export interface ClaimCustomer {
+    id : string;
+    transaction: Transaction;
+    product: Product;
+    quantity: number;
+    status: string;
+    description : string;
+    created_at : Date;
+    updated_at : Date;
+}
+
 export type PageProps<
     T extends Record<string, unknown> = Record<string, unknown>
 > = T & {
@@ -181,6 +193,8 @@ export type PageProps<
     purchase: Purchase;
     transaction: Transaction;
     transactions: Transaction[];
+    claimcustomers: ClaimCustomer[];
+    claimcustomer: ClaimCustomer;
     products: Product[];
     discounts: Discount[];
     product: Product;

@@ -6,6 +6,7 @@ use App\Http\Controllers\DownloadController;
 
 use App\Http\Controllers\CashierController;
 use App\Http\Controllers\PurchaseProductController;
+use App\Http\Controllers\ClaimCustomerController;
 
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\DiscountController;
@@ -46,6 +47,7 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/download', [DownloadController::class, 'download'])->name('download.file');
 
+    Route::get('check-password', [ProfileController::class, 'checkPassword'])->name('check-password');
 
     Route::group(['prefix' => 'transaction'], function() {
 
@@ -60,17 +62,23 @@ Route::middleware('auth')->group(function () {
         Route::post('purchase-products/new-purchase', [PurchaseProductController::class, 'newPurchase'])->name('transaction.purchase-products.new-purchase');
         Route::post('purchase-products/submit', [PurchaseProductController::class, 'submit'])->name('transaction.purchase-products.submit');
 
+        Route::resource('claim-customer', ClaimCustomerController::class)->names('transaction.claim-customers');
+
+        Route::get('claim-customer/verify-transaction/{transaction_id}', [ClaimCustomerController::class, 'verifyTransaction'])->name('transaction.claim-customers.verify-transaction');
+
     });
 
     Route::group(['prefix' => 'master'], function() {
 
         Route::resource('products', ProductController::class)->names('master.products');
-        Route::get('products/get-data/{barcode}', [ProductController::class, 'getDataProduct'])->name('master.products.get-data');
+        Route::get('products/get-data/{barcode}', [ProductController::class, 'getDataProductBarcode'])->name('master.products.get-data-barcode');
         Route::post('products/add-discount/{id}', [ProductController::class, 'addDiscountProduct'])->name('master.products.add-discount');
         Route::post('products/import-data', [ProductController::class, 'importData'])->name('master.products.import-data');
 
-
         Route::get('products/print-barcode/{product}/{value}', [ProductController::class, 'printBarcode'])->name('master.products.print-barcode');
+
+        Route::get('products/get-products-transaction/{transaction_id}', [ProductController::class, 'getDataProductTransaction'])->name('master.products.get-product-transaction');
+
 
         Route::resource('discounts', DiscountController::class)->names('master.discounts');
 

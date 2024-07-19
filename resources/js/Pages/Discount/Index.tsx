@@ -198,7 +198,7 @@ export default function Index({
     }, [data.barcode]);
 
     const getDataProduct = async (barcode: string) => {
-        const res = await axios.get(route('master.products.get-data', barcode));
+        const res = await axios.get(route('master.products.get-data-barcode', barcode));
         const product = res.data.product;
 
         if(product){
@@ -306,22 +306,13 @@ export default function Index({
                         </Button>
                         </div>
                 </div>
-                <div className="flex justify-between items-center mt-4">
-                    <div className="flex space-x-4">
-                        <Button.Group>
-                            <Button color="red">PDF</Button>
-                            <Button color="gray">Excel</Button>
-                            <Button color="gray">CSV</Button>
-                        </Button.Group>
-                    </div>
-                    <div className="flex justify-end">
-                        <FloatingLabel
-                            variant="outlined"
-                            value={searchQuery}
-                            onChange={onSearchChange}
-                            label="search..."
-                        />
-                    </div>
+                <div className="flex justify-end">
+                    <FloatingLabel
+                        variant="outlined"
+                        value={searchQuery}
+                        onChange={onSearchChange}
+                        label="search..."
+                    />
                 </div>
 
                 <div className="overflow-x-auto">

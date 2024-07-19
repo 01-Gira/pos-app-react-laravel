@@ -41,7 +41,6 @@ export default function SidebarLayout({
                 <Sidebar.Logo
                     href={route('dashboard')}
                     img="#"
-                    imgAlt="Flowbite logo"
                 >
                   {user.store?.store_name}
                 </Sidebar.Logo>
@@ -96,6 +95,30 @@ export default function SidebarLayout({
                                 )}
                             >
                                 Purchase Product
+                            </Sidebar.Item>
+                            <Sidebar.Item
+                                className={
+                                    route().current("transaction.purchase-products.*")
+                                        ? "bg-gray-300 text-black"
+                                        : ""
+                                }
+                                href={route(
+                                    "transaction.purchase-products.index"
+                                )}
+                            >
+                                Claim To Supplier
+                            </Sidebar.Item>
+                            <Sidebar.Item
+                                className={
+                                    route().current("transaction.claim-customers.*")
+                                        ? "bg-gray-300 text-black"
+                                        : ""
+                                }
+                                href={route(
+                                    "transaction.claim-customers.index"
+                                )}
+                            >
+                                Claim Customer
                             </Sidebar.Item>
                         </Sidebar.Collapse>
                         <Sidebar.Collapse

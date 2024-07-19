@@ -290,22 +290,13 @@ export default function Index({
                     </div>
                 </div>
 
-                <div className="flex justify-between items-center mt-4">
-                    <div className="flex space-x-4">
-                        <Button.Group>
-                            <Button color="red">PDF</Button>
-                            <Button color="gray">Excel</Button>
-                            <Button color="gray">CSV</Button>
-                        </Button.Group>
-                    </div>
-                    <div className="flex justify-end">
-                        <FloatingLabel
-                            variant="outlined"
-                            value={searchQuery}
-                            onChange={onSearchChange}
-                            label="search..."
-                        />
-                    </div>
+                <div className="flex justify-end">
+                    <FloatingLabel
+                        variant="outlined"
+                        value={searchQuery}
+                        onChange={onSearchChange}
+                        label="search..."
+                    />
                 </div>
 
                 <div className="overflow-x-auto">

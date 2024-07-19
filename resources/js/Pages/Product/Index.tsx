@@ -217,8 +217,10 @@ export default function Index({
     const columns: TableColumn<Product>[] = [
         {
             name: "Barcode",
-            cell: (row: Product) => <Barcode value={row.barcode} />,
+            // cell: (row: Product) => <Barcode value={row.barcode} />,
+            cell: (row: Product) => row.barcode,
             sortable: true,
+            width: '15%'
         },
         {
             name: "Product Name",
@@ -229,27 +231,39 @@ export default function Index({
             name: "Category",
             selector: (row: Product) => row.category?.category_name || "",
             sortable: true,
+            center: true,
         },
         {
             name: "Stock",
             selector: (row: Product) => row.stock,
             sortable: true,
+            center: true,
+        },
+        {
+            name: "Type",
+            selector: (row: Product) => row.type,
+            sortable: true,
+            center: true,
         },
         {
             name: "Discount",
-            selector: (row: Product) => row.discount?.discount || 0,
+            selector: (row: Product) => row.discount ? `${row.discount.discount}%` : '0%',
             sortable: true,
+            center: true,
         },
         {
             name: "Price",
             selector: (row: Product) => row.price,
             sortable: true,
+            center: true,
         },
         {
             name: "Created At",
             selector: (row: Product) =>
                 format(new Date(row.created_at), "yyyy-MM-dd"),
             sortable: true,
+            width: '10%',
+            center: true,
         },
         {
             name: "Action",
@@ -531,7 +545,6 @@ export default function Index({
                         paginationRowsPerPageOptions={[5, 10, 25, 50]}
                         onChangePage={onPageChange}
                         onChangeRowsPerPage={onRowsPerPageChange}
-                        highlightOnHover
                         persistTableHead
                         progressPending={pending}
                     />

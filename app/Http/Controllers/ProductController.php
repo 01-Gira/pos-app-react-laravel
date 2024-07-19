@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Product;
 use App\Models\Discount;
 use App\Models\Category;
+use App\Models\TransactionDetail;
 use App\Models\Logs;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -64,9 +65,9 @@ class ProductController extends Controller
     }
 
     /**
-     * Get data from database.
+     * Search data product by barcode.
      */
-    public function getDataProduct($barcode)
+    public function getDataProductBarcode($barcode)
     {
         $product = Product::where('barcode', $barcode)->with('category')->first();
 
@@ -91,6 +92,35 @@ class ProductController extends Controller
         }
     }
 
+    /**
+     * Get data from database.
+     */
+    public function getDataProductTransaction($transaction_id, Request $request)
+    {
+        $filters = [
+            'search' => $request->input('search')
+        ];
+
+        $perPage = $request->input('per_page', 5);
+
+        $transaction_details = TransactionDetail::filter($filters)
+            ->where('transaction_id', $transaction_id)
+            ->with('product')
+            ->paginate($perPage);
+
+        return response()->json([
+            'status' => 'OK',
+            'transaction_details' => $transaction_details->items(),
+            'pagination' => [
+                'current_page' => $transaction_details->currentPage(),
+                'total_pages' => $transaction_details->lastPage(),
+                'total_items' => $transaction_details->total(),
+                'per_page' => $transaction_details->perPage(),
+            ],
+            'search' => $filters['search']
+        ]);
+    }
+
 
 
     /**
@@ -104,10 +134,11 @@ class ProductController extends Controller
             DB::connection('pgsql')->beginTransaction();
 
             $validated = $request->validate([
-                'barcode' => 'required|numeric|min:12|max:13',
+                'barcode' => 'required|numeric',
                 'product_name' => 'required|string|max:225',
                 'category_id' => 'required|uuid',
                 'stock' => 'required|numeric',
+                'type' => 'required|string',
                 'price' => 'required|numeric',
                 'picture' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
             ]);

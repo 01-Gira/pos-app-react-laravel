@@ -10,7 +10,7 @@ class Product extends Model
 {
     use HasFactory, HasUuids;
 
-    protected $fillable = ['barcode', 'product_name', 'category_id', 'stock', 'price', 'picture'];
+    protected $fillable = ['barcode', 'product_name', 'category_id', 'stock', 'type', 'price', 'picture'];
 
 
     public function category()
@@ -36,9 +36,9 @@ class Product extends Model
     public function scopeFilter($query, array $filters)
     {
         return $query
-        ->when($filters['search'], function ($query, $filters) {
+        ->when(isset($filters['search']), function ($query) use ($filters) {
             return $query->where('product_name', 'like', "%{$filters['search']}%")
-                         ->orWhere('barcode', 'like', "%{$filters['search']}%");
+                ->orWhere('barcode', 'like', "%{$filters['search']}%");
         })
         ->when($filters['category'], function ($query, $category) {
             return $query->where('category_id', $category);

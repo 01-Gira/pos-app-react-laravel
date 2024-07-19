@@ -144,7 +144,7 @@ export default function Index({ title, auth, flash, suppliers }: PageProps) {
         try {
             setLoading(true);
             const res = await axios.get(
-                route("master.products.get-data", barcode)
+                route("master.products.get-data-barcode", barcode)
             );
 
             const product = res.data.product;
@@ -445,7 +445,8 @@ export default function Index({ title, auth, flash, suppliers }: PageProps) {
                                     total_payment: 0,
                                     purchase_date: new Date(),
                                     created_at: new Date(),
-                                    updated_at: new Date()
+                                    updated_at: new Date(),
+                                    supplier : null
                                 });
 
                                 setSupplierIdToSave(e.target.value);

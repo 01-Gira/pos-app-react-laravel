@@ -202,6 +202,12 @@ export default function Index({
 
     const columns: TableColumn<Category>[] = [
         {
+            name: "Category ID",
+            selector: (row: Category) => row.id,
+            sortable: true,
+            width: '30%'
+        },
+        {
             name: "Category Name",
             selector: (row: Category) => row.category_name,
             sortable: true,
@@ -338,24 +344,14 @@ export default function Index({
                     </div>
                 </div>
 
-                <div className="flex justify-between items-center mt-4">
-                    <div className="flex space-x-4">
-                        <Button.Group>
-                            <Button color="red">PDF</Button>
-                            <Button color="green">Excel</Button>
-                            <Button color="green">CSV</Button>
-                        </Button.Group>
-                    </div>
-                    <div className="flex justify-end">
-                        <FloatingLabel
-                            variant="outlined"
-                            value={searchQuery}
-                            onChange={onSearchChange}
-                            label="search..."
-                        />
-                    </div>
+                <div className="flex justify-end">
+                    <FloatingLabel
+                        variant="outlined"
+                        value={searchQuery}
+                        onChange={onSearchChange}
+                        label="search..."
+                    />
                 </div>
-
                 <Modal show={openModal} onClose={() => setOpenModal(false)}>
                     <Modal.Header>Add Data</Modal.Header>
                     <Modal.Body>

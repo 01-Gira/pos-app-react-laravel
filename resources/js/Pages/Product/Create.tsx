@@ -14,6 +14,7 @@ export default function Create({ title, auth, flash, categories }: PageProps) {
         product_name: "",
         category_id: "",
         stock: "",
+        type: "",
         price: "",
         picture: null as File | null,
     });
@@ -27,7 +28,7 @@ export default function Create({ title, auth, flash, categories }: PageProps) {
     const getDataProduct = async (barcode: string) => {
         try {
             const res = await axios.get(
-                route("master.products.get-data", { barcode })
+                route("master.products.get-data-barcode", { barcode })
             );
 
             const product = res.data.product;
@@ -96,14 +97,20 @@ export default function Create({ title, auth, flash, categories }: PageProps) {
             <div className="p-7 border border-gray-200 dark:border-gray-700 shadow-lg rounded-lg">
                 <h1 className="dark:text-white text-lg">{title}</h1>
                 <form onSubmit={handleSubmit} className="mt-5">
-                    <div className="mt-5">
-                        <Label htmlFor="barcode" value="Unique Code" />
-                        <TextInput
-                            id="barcode"
-                            value={data.barcode}
-                            onChange={(e) => setData("barcode", e.target.value)}
-                        />
-                        <InputError message={errors.barcode} className="mt-2" />
+                    <div className="grid grid-cols-2 gap-4 mt-5">
+                        <div>
+                            <Label htmlFor="barcode" value="Barcode" />
+                            <TextInput
+                                id="barcode"
+                                value={data.barcode}
+                                onChange={(e) => setData("barcode", e.target.value)}
+                            />
+                            <InputError message={errors.barcode} className="mt-2" />
+                        </div>
+                        <div>
+                            <Label htmlFor="btn" value="Generate Barcode" />
+                            <Button>Generate</Button>
+                        </div>
                     </div>
                     <div className="grid grid-cols-2 gap-4 mt-5">
                         <div>
@@ -161,7 +168,7 @@ export default function Create({ title, auth, flash, categories }: PageProps) {
                         <div>
                             <Label
                                 htmlFor="category_id"
-                                value="Select your category"
+                                value="Select product category"
                             />
                             <Select
                                 id="category_id"
@@ -189,25 +196,51 @@ export default function Create({ title, auth, flash, categories }: PageProps) {
                         </div>
                     </div>
 
-                    <div className="mt-5">
-                        <Label htmlFor="picture" value="Upload Picture" />
-                        <FileInput
-                            id="picture"
-                            onChange={handleFileChange}
-                            accept="image/*"
-                        />
-                        <InputError message={errors.picture} className="mt-2" />
+                    <div className="grid grid-cols-2 gap-4 mt-5">
+                        <div>
+                            <Label htmlFor="picture" value="Upload Picture" />
+                            <FileInput
+                                id="picture"
+                                onChange={handleFileChange}
+                                accept="image/*"
+                            />
+                            <InputError message={errors.picture} className="mt-2" />
 
-                        {imagePreview && (
-                            <div className="mt-5">
-                                <img
-                                    src={imagePreview}
-                                    alt="Preview"
-                                    className="max-w-full h-auto"
-                                />
-                            </div>
-                        )}
+                            {imagePreview && (
+                                <div className="mt-5">
+                                    <img
+                                        src={imagePreview}
+                                        alt="Preview"
+                                        className="max-w-full h-auto"
+                                    />
+                                </div>
+                            )}
+                        </div>
+                        <div>
+                            <Label
+                                htmlFor="type"
+                                value="Select product type"
+                            />
+                            <Select
+                                id="type"
+                                value={data.type}
+                                onChange={(e) =>
+                                    setData("type", e.target.value)
+                                }
+                                required
+                            >
+                                <option value="">Select</option>
+                                <option value="pcs">pcs</option>
+                                <option value="pack">pack</option>
+                            </Select>
+                            <InputError
+                                message={errors.type}
+                                className="mt-2"
+                            />
+                        </div>
                     </div>
+
+
 
                     <div className="flex space-x-4 mt-5">
                         <Button
