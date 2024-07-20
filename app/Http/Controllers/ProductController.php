@@ -19,6 +19,8 @@ use App\Imports\ProductsImport;
 use App\Exports\ProductsExport;
 use Maatwebsite\Excel\Facades\Excel;
 
+use App\Jobs\NotifyUserOfCompletedExport;
+
 class ProductController extends Controller
 {
     /**
@@ -69,6 +71,9 @@ class ProductController extends Controller
      */
     public function getDataProductBarcode($barcode)
     {
+        $indctr = 0;
+        $message = 'Product is not exist';
+
         $product = Product::where('barcode', $barcode)->with('category')->first();
 
         if ($product) {
@@ -85,11 +90,15 @@ class ProductController extends Controller
                 $product->pictureBase64 = $base64;
             }
 
-            return response()->json([
-                'status' => 'OK',
-                'product' => $product
-            ]);
+            $indctr = 1;
+            $message = 'Product is exist';
         }
+
+        return response()->json([
+            'indctr' => $indctr,
+            'message' => $message,
+            'product' => $product
+        ]);
     }
 
     /**
@@ -379,21 +388,23 @@ class ProductController extends Controller
     public function exportData($format)
     {
         try {
+            $fileName = 'products.xlsx';
 
-            $export = new ProductsExport();
-            switch ($format) {
-                case 'xlsx':
-                    return $export->download('products.xlsx');
-                case 'csv':
-                    return $export->download('products.csv', \Maatwebsite\Excel\Excel::CSV);
-                case 'pdf':
-                    return $export->download('products.pdf', \Maatwebsite\Excel\Excel::DOMPDF);
-                default:
-                    return to_route('master.products.index')->with([
-                        'type_message' => 'warning',
-                        'message' => 'Oops Something Went Wrong! Message : Invalid format'
-                    ]);
-            }
+            $filePath = 'exports/' . $fileName;
+
+            $array = [
+                'type' => 'xlsx',
+                'fileName' => $fileName,
+            ];
+
+            (new ProductsExport())->store($filePath, 'public')->chain([
+                new NotifyUserOfCompletedExport(request()->user(), $array),
+            ]);
+
+            return to_route('master.products.index')->with([
+                'type_message' => 'success',
+                'message' => 'Process export is on process, you will be notified when is ready to download'
+            ]);
         } catch (\Throwable $th) {
             return to_route('master.products.index')->with([
                 'type_message' => 'warning',

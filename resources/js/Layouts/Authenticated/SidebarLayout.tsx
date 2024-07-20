@@ -96,18 +96,18 @@ export default function SidebarLayout({
                             >
                                 Purchase Product
                             </Sidebar.Item>
-                            <Sidebar.Item
+                            {/* <Sidebar.Item
                                 className={
-                                    route().current("transaction.purchase-products.*")
+                                    route().current("transaction.claim-to-suppliers.*")
                                         ? "bg-gray-300 text-black"
                                         : ""
                                 }
                                 href={route(
-                                    "transaction.purchase-products.index"
+                                    "transaction.claim-to-suppliers.index"
                                 )}
                             >
                                 Claim To Supplier
-                            </Sidebar.Item>
+                            </Sidebar.Item> */}
                             <Sidebar.Item
                                 className={
                                     route().current("transaction.claim-customers.*")

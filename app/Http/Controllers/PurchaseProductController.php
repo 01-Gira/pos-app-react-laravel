@@ -98,7 +98,7 @@ class PurchaseProductController extends Controller
                 }
 
                 if($value['discount'] == null){
-                    throw new Exception('Discount can not empty!');
+                    throw new Exception('Discount can not be empty!');
                 }
 
                 PurchaseDetail::updateOrCreate(

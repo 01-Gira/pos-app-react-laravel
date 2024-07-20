@@ -17,33 +17,18 @@ import {
     TextInput,
 } from "flowbite-react";
 import { useEffect, useRef, useState } from "react";
-import { formatRupiah } from "@/utils/Utils";
+import { classCustomSwal, formatRupiah, Toast } from "@/utils/Utils";
 import { BeatLoader, ClipLoader } from "react-spinners";
 import { HiOutlineExclamationCircle } from "react-icons/hi";
 import DataTable, { TableColumn } from "react-data-table-component";
 import { format } from "date-fns";
 import Swal from "sweetalert2";
-import Transactions from "../Reports/Transactions";
 
 export default function Index({ title, auth, flash }: PageProps) {
     const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [holdtransactions, setHoldTransactions] = useState<HoldTransaction[]>(
         []
     );
-
-    const [swalCustomClassProps, setSwalProps] = useState({
-        popup: "!relative !transform !overflow-hidden !rounded-lg !bg-white !text-left !shadow-xl !transition-all sm:!my-8 sm:!w-full sm:!max-w-lg !p-0 !grid-cols-none",
-        icon: "!m-0 !mx-auto !flex !h-12 !w-12 !flex-shrink-0 !items-center !justify-center !rounded-full !border-0 !bg-red-100 sm:!h-10 sm:!w-10 !mt-5 sm!mt-6 sm:!ml-6 !col-start-1 !col-end-3 sm:!col-end-2",
-        title: "!p-0 !pt-3 !text-center sm:!text-left !text-base !font-semibold !leading-6 !text-gray-900 !pl-4 !pr-4 sm:!pr-6 sm:!pl-0 sm:!pt-6 sm:!ml-4 !col-start-1 sm:!col-start-2 !col-end-3",
-        htmlContainer:
-            "!mt-2 sm:!mt-0 !m-0 !text-center sm:!text-left !text-sm !text-gray-500 !pl-4 sm:!pl-0 !pr-4 !pb-4 sm:!pr-6 sm:!pb-4 sm:!ml-4 !col-start-1 sm:!col-start-2 !col-end-3",
-        actions:
-            "!bg-gray-50 !px-4 !py-3 sm:!flex sm:!flex-row-reverse sm:!px-6 !w-full !justify-start !mt-0 !col-start-1 !col-end-3",
-        confirmButton:
-            "inline-flex w-full justify-center rounded-md bg-cyan-700 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-cyan-800 sm:ml-3 sm:w-auto",
-        cancelButton:
-            "mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:mt-0 sm:w-auto",
-    });
 
     const barcodeInput = useRef<HTMLInputElement>(null);
 
@@ -60,13 +45,18 @@ export default function Index({ title, auth, flash }: PageProps) {
 
             if (transactionId) {
                 setLoading(false);
-                Swal.fire({
-                    buttonsStyling: false,
-                    customClass: swalCustomClassProps,
-                    icon: "info",
-                    title: "Info",
+                // Swal.fire({
+                //     buttonsStyling: false,
+                //     customClass: classCustomSwal,
+                //     icon: "info",
+                //     title: "Info",
+                //     text: "There is a transaction in progress. You can't create a new transaction",
+                // });
+                await Toast.fire({
+                    icon: "warning",
+                    title: "Warning",
                     text: "There is a transaction in progress. You can't create a new transaction",
-                });
+                  })
                 return;
             }
 
@@ -98,11 +88,17 @@ export default function Index({ title, auth, flash }: PageProps) {
         } catch (error : any) {
             setLoading(false);
 
-            Swal.fire({
-                icon: "warning",
-                title: "Warning",
+            await Toast.fire({
+                icon: "error",
+                title: "Error",
                 text: error.message,
-            });
+              })
+
+            // Swal.fire({
+            //     icon: "error",
+            //     title: "Error",
+            //     text: error.message,
+            // });
         }
     };
 
@@ -196,11 +192,17 @@ export default function Index({ title, auth, flash }: PageProps) {
         } catch (error : any) {
             setLoading(false);
 
-            Swal.fire({
-                icon: "warning",
-                title: "Warning",
+            // Swal.fire({
+            //     icon: "error",
+            //     title: "Error",
+            //     text: error.message,
+            // });
+
+            await Toast.fire({
+                icon: "error",
+                title: "Error",
                 text: error.message,
-            });
+              })
         }
     };
 
@@ -210,13 +212,12 @@ export default function Index({ title, auth, flash }: PageProps) {
 
             if(!transactionId){
                 setLoading(false);
-                Swal.fire({
-                    buttonsStyling: false,
-                    customClass: swalCustomClassProps,
+
+                await Toast.fire({
                     icon: "info",
                     title: "Info",
                     text: "There is no transaction in progress or products list is empty",
-                });
+                  })
 
                 return;
             }
@@ -229,22 +230,33 @@ export default function Index({ title, auth, flash }: PageProps) {
             );
 
             if(res.data.indctr === 0){
-                Swal.fire({
-                    icon: "warning",
-                    title: "Warning",
+                // Swal.fire({
+                //     icon: "warning",
+                //     title: "Warning",
+                //     text: res.data.message,
+                // });
+
+                await Toast.fire({
+                    icon: "error",
+                    title: "Error",
                     text: res.data.message,
-                });
+                  })
             }
 
             setLoading(false);
 
         } catch (error : any) {
             setLoading(false);
-            Swal.fire({
-                icon: "warning",
-                title: "Warning",
+            // Swal.fire({
+            //     icon: "warning",
+            //     title: "Warning",
+            //     text: error.message,
+            // });
+            await Toast.fire({
+                icon: "error",
+                title: "Error",
                 text: error.message,
-            });
+              })
         }
     };
 
@@ -256,28 +268,38 @@ export default function Index({ title, auth, flash }: PageProps) {
 
             if (status === "hold" && !transactionId) {
                 setLoading(false);
-                Swal.fire({
-                    showCloseButton: false,
-                    showConfirmButton: false,
-                    icon: "info",
-                    title: "Info",
-                    text: "There is no transaction in progress",
-                });
+                // Swal.fire({
+                //     showCloseButton: false,
+                //     showConfirmButton: false,
+                //     icon: "info",
+                //     title: "Info",
+                //     text: "There is no transaction in progress",
+                // });
 
+                await Toast.fire({
+                    icon: "warning",
+                    title: "Warning",
+                    text: "There is no transaction in progress",
+                  })
                 return;
             }
 
             if (status === 'completed' && transactions && transactions.length > 0 && (transactions[0].payment_method === '' || transactions[0].payment_method === null)) {
                 setLoading(false);
 
-                Swal.fire({
-                    showCloseButton: false,
-                    showConfirmButton: false,
-                    icon: "info",
-                    title: "Info",
-                    text: "Please select payment method first! or product list is empty!",
-                });
+                // Swal.fire({
+                //     showCloseButton: false,
+                //     showConfirmButton: false,
+                //     icon: "info",
+                //     title: "Info",
+                //     text: "Please select payment method first! or product list is empty!",
+                // });
 
+                await Toast.fire({
+                    icon: "warning",
+                    title: "Warning",
+                    text: "Please select payment method first! or product list is empty!",
+                  })
                 return;
             }
 
@@ -324,11 +346,17 @@ export default function Index({ title, auth, flash }: PageProps) {
                     }
                 }
             } else {
-                Swal.fire({
+                // Swal.fire({
+                //     icon: "warning",
+                //     title: "Warning",
+                //     text: res.data.message,
+                // });
+
+                await Toast.fire({
                     icon: "warning",
                     title: "Warning",
                     text: res.data.message,
-                });
+                  })
 
                 return;
             }
@@ -336,11 +364,17 @@ export default function Index({ title, auth, flash }: PageProps) {
         } catch (error : any) {
             setLoading(false);
 
-            Swal.fire({
-                icon: "warning",
-                title: "Warning",
+            // Swal.fire({
+            //     icon: "warning",
+            //     title: "Warning",
+            //     text: error.message,
+            // });
+
+            await Toast.fire({
+                icon: "error",
+                title: "Error",
                 text: error.message,
-            });
+              })
         }
     };
 
@@ -409,13 +443,19 @@ export default function Index({ title, auth, flash }: PageProps) {
     const listHoldTransaction = async () => {
             try {
                 if (transactionId) {
-                    Swal.fire({
-                        customClass: swalCustomClassProps,
-                        buttonsStyling: false,
+                    // Swal.fire({
+                    //     customClass: classCustomSwal,
+                    //     buttonsStyling: false,
+                    //     icon: "info",
+                    //     title: "Info",
+                    //     text: "There is a transaction in progress. You can't open list hold transaction",
+                    // });
+
+                    await Toast.fire({
                         icon: "info",
                         title: "Info",
                         text: "There is a transaction in progress. You can't open list hold transaction",
-                    });
+                      })
 
                     return;
                 }
@@ -430,11 +470,17 @@ export default function Index({ title, auth, flash }: PageProps) {
 
                 setOpenModalTableHoldTransaction(true);
             } catch (error : any) {
-                Swal.fire({
-                    icon: "warning",
-                    title: "Warning",
+                // Swal.fire({
+                //     icon: "warning",
+                //     title: "Warning",
+                //     text: error.message,
+                // });
+
+                await Toast.fire({
+                    icon: "error",
+                    title: "Error",
                     text: error.message,
-                });
+                  })
             }
     };
 
@@ -457,24 +503,34 @@ export default function Index({ title, auth, flash }: PageProps) {
     const printReceipt = async () => {
         try {
             if (!transactionId || transactions.some((t) => t.transaction_details?.length === 0)) {
-                Swal.fire({
-                    buttonsStyling: false,
-                    customClass: swalCustomClassProps,
-                    icon: "info",
-                    title: "Info",
+                // Swal.fire({
+                //     buttonsStyling: false,
+                //     customClass: classCustomSwal,
+                //     icon: "info",
+                //     title: "Info",
+                //     text: "There is no transaction in progress or products list is empty",
+                // });
+                await Toast.fire({
+                    icon: "warning",
+                    title: "Warning",
                     text: "There is no transaction in progress or products list is empty",
-                });
+                  })
                 return;
             }
 
             if (transactions[0].payment_method == '' || transactions[0].payment_method == null) {
-                Swal.fire({
-                    buttonsStyling: false,
-                    customClass: swalCustomClassProps,
-                    icon: "info",
-                    title: "Info",
+                // Swal.fire({
+                //     buttonsStyling: false,
+                //     customClass: classCustomSwal,
+                //     icon: "info",
+                //     title: "Info",
+                //     text: "Please select payment method first!",
+                // });
+                await Toast.fire({
+                    icon: "warning",
+                    title: "Warning",
                     text: "Please select payment method first!",
-                });
+                  })
                 return;
             }
 
@@ -487,11 +543,17 @@ export default function Index({ title, auth, flash }: PageProps) {
             await window.open(url, "_blank");
 
         } catch (error : any) {
-            Swal.fire({
-                icon: "warning",
-                title: "Warning",
+            // Swal.fire({
+            //     icon: "warning",
+            //     title: "Warning",
+            //     text: error.message,
+            // });
+
+            await Toast.fire({
+                icon: "error",
+                title: "Error",
                 text: error.message,
-            });
+              })
         }
     };
 
@@ -513,11 +575,17 @@ export default function Index({ title, auth, flash }: PageProps) {
                 setHoldTransactions(transactions);
             }
         } catch (error : any) {
-            Swal.fire({
-                icon: "warning",
-                title: "Warning",
+            // Swal.fire({
+            //     icon: "warning",
+            //     title: "Warning",
+            //     text: error.message,
+            // });
+
+            await Toast.fire({
+                icon: "error",
+                title: "Error",
                 text: error.message,
-            });
+              })
         }
     };
 
@@ -814,7 +882,52 @@ export default function Index({ title, auth, flash }: PageProps) {
                                                 {detail.product.type}
                                             </Table.Cell>
                                             <Table.Cell>
-                                                {formatRupiah(detail.price)}
+                                                <TextInput
+                                                type="number"
+                                                value={detail.price}
+                                                onChange={async(e) => {
+                                                    const updatedTransactionDetails =
+                                                    [
+                                                        ...(transaction.transaction_details || [])
+                                                    ];
+
+                                                    updatedTransactionDetails[index].price = parseInt(e.target.value);
+                                                    updatedTransactionDetails[
+                                                        index
+                                                    ].total_price =
+                                                        calculateTotalPrice(
+                                                            updatedTransactionDetails[
+                                                                index
+                                                            ].price,
+                                                            updatedTransactionDetails[
+                                                                index
+                                                            ].quantity,
+                                                            updatedTransactionDetails[
+                                                                index
+                                                            ].discount
+                                                        );
+                                                    setTransactions(
+                                                        (
+                                                            prevTransactions
+                                                        ) =>
+                                                            prevTransactions.map(
+                                                                (t) => {
+                                                                    if (
+                                                                        t.id ===
+                                                                        transaction.id
+                                                                    ) {
+                                                                        return {
+                                                                            ...t,
+                                                                            products:
+                                                                                updatedTransactionDetails,
+                                                                        };
+                                                                    }
+                                                                    return t;
+                                                                }
+                                                            )
+                                                    );
+                                                }}
+                                                />
                                             </Table.Cell>
                                             <Table.Cell>
                                                 {loading ? (

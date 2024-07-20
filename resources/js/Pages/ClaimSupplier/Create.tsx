@@ -9,12 +9,12 @@ import { CircleLoader, ClipLoader } from "react-spinners";
 import Swal from "sweetalert2";
 import DataTable, { TableColumn } from "react-data-table-component";
 import { format } from "date-fns";
-import { formatRupiah, Toast } from "@/utils/Utils";
+import { formatRupiah } from "@/utils/Utils";
 
 export default function Create({ title, auth, flash }: PageProps) {
     const [imagePreview, setImagePreview] = useState<string | null>(null);
     const { data, setData, post, processing, errors } = useForm({
-        transaction_id: "",
+        purchase_id: "",
         product_id: "",
         description: "",
         quantity: 0,
@@ -39,15 +39,26 @@ export default function Create({ title, auth, flash }: PageProps) {
     const [pending, setPending] = useState(false);
 
     useEffect(() => {
-        if (data.transaction_id.length > 0) {
-            verifyTransaction(data.transaction_id);
+        if (data.purchase_id.length > 0) {
+            verifyTransaction(data.purchase_id);
         }
-    }, [data.transaction_id]);
+    }, [data.purchase_id]);
 
-    const verifyTransaction = async (transaction_id: string) => {
+    const Toast = Swal.mixin({
+        toast: true,
+        position: 'top-right',
+        customClass: {
+          popup: 'colored-toast',
+        },
+        showConfirmButton: false,
+        timer: 1500,
+        timerProgressBar: true,
+      })
+
+    const verifyTransaction = async (purchase_id: string) => {
         try {
             const res = await axios.get(
-                route("transaction.claim-customers.verify-transaction", { transaction_id })
+                route("transaction.claim-customers.verify-transaction", { purchase_id })
             );
 
             if(res.data.indctr === 1){
@@ -109,7 +120,7 @@ export default function Create({ title, auth, flash }: PageProps) {
     const fetchDataProducts = async(params : any) => {
         setPending(true);
         try {
-            const res = await axios.get(route("master.products.get-product-transaction", {transaction_id : data.transaction_id}), { params });
+            const res = await axios.get(route("master.products.get-product-transaction", {purchase_id : data.purchase_id}), { params });
             const transaction_details = res.data.transaction_details;
 
             if(transaction_details){
@@ -221,15 +232,15 @@ export default function Create({ title, auth, flash }: PageProps) {
                 <form onSubmit={handleSubmit} className="mt-5 grid grid-cols-12">
                     <div className="col-span-12 mt-5">
                         <div>
-                            <Label htmlFor="transaction_id" value="Transcation ID" />
+                            <Label htmlFor="purchase_id" value="Transcation ID" />
                             <TextInput
-                                id="transaction_id"
+                                id="purchase_id"
                                 ref={transactionInput}
-                                value={data.transaction_id}
-                                onChange={(e) => setData("transaction_id", e.target.value)}
+                                value={data.purchase_id}
+                                onChange={(e) => setData("purchase_id", e.target.value)}
                                 required
                             />
-                            <InputError message={errors.transaction_id} className="mt-2" />
+                            <InputError message={errors.purchase_id} className="mt-2" />
                         </div>
                     </div>
                     <div className="col-span-12 mt-5 grid grid-cols-12 gap-4">

@@ -19,16 +19,24 @@ use Illuminate\Support\Facades\Storage;
 use Exception;
 use Illuminate\Support\Str;
 
+use App\Exports\ClaimCustomerExport;
+use App\Jobs\NotifyUserOfCompletedExport;
+
 class ClaimCustomerController extends Controller
 {
     public function index(Request $request)
     {
+        $start_date = $request->input('start_date') ? $request->input('start_date') : Carbon::now()->firstOfMonth()->format('Y-m-d') ;
+        $end_date = $request->input('end_date') ? $request->input('end_date') : Carbon::now()->endOfMonth()->format('Y-m-d') ;
+
         $filters = [
             'search' => $request->input('search'),
-            'start_date' => $request->input('start_date'),
-            'end_date' => $request->input('end_date'),
+            'start_date' => $start_date,
+            'end_date' => $end_date,
             'status' => $request->input('status'),
         ];
+
+
 
         $perPage = $request->input('per_page', 5);
 
@@ -131,7 +139,7 @@ class ClaimCustomerController extends Controller
             $claim_customer->save();
 
             if($validated['status'] == 'approved'){
-                $transaction_detail = TransactionDetail::find(['transaction_id' => $validated['transaction_id'], 'product_id' => $validated['product_id']]);
+                $transaction_detail = TransactionDetail::where(['transaction_id' => $validated['transaction_id'], 'product_id' => $validated['product_id']])->first();
 
                 $transaction_detail->quantity -= $validated['quantity'];
                 $new_price = $transaction_detail->price * $validated['quantity'];
@@ -140,6 +148,7 @@ class ClaimCustomerController extends Controller
 
 
                 $transaction = Transaction::find($validated['transaction_id']);
+
                 $new_subtotal = $transaction->subtotal - $new_price;
                 $new_ppn = (int)($new_subtotal * 0.1);
                 $new_total_payment = (int)($new_subtotal + $new_ppn);
@@ -188,5 +197,35 @@ class ClaimCustomerController extends Controller
         }
 
         return response()->json(['indctr' => $indctr, 'message' => $msg]);
+    }
+
+    public function exportData(Request $request)
+    {
+        try {
+            $filters = $request->only(['start_date', 'end_date', 'status']);
+
+            $fileName = 'claim-customers' . ' ' . $filters['start_date'] . ' - ' .$filters['end_date'] . '.xlsx';
+
+            $filePath = 'exports/' . $fileName;
+
+            $array = [
+                'type' => 'xlsx',
+                'fileName' => $fileName,
+            ];
+
+            (new ClaimCustomerExport($filters))->store($filePath, 'public')->chain([
+                new NotifyUserOfCompletedExport(request()->user(), $array),
+            ]);
+
+            return back()->with([
+                'type_message' => 'success',
+                'message' => 'Process export is on process, you will be notified when is ready to download'
+            ]);
+        } catch (\Throwable $th) {
+            return back()->with([
+                'type_message' => 'error',
+                'message' => 'Oops Something Went Wrong! Message : ' . $th
+            ]);
+        }
     }
 }
