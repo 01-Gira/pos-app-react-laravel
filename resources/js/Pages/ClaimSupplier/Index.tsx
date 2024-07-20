@@ -1,6 +1,6 @@
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import {
-    ClaimCustomer,
+    ClaimSupplier,
     HoldTransaction,
     PageProps,
 
@@ -26,7 +26,7 @@ import DataTable, { TableColumn } from "react-data-table-component";
 import { format } from "date-fns";
 import Swal from "sweetalert2";
 import withReactContent from "sweetalert2-react-content";
-export default function Index({ title, auth, flash, search, claimcustomers, pagination, start_date, end_date }: PageProps) {
+export default function Index({ title, auth, flash, search, claimsuppliers, pagination, start_date, end_date }: PageProps) {
 
     const [pending, setPending] = useState(false);
     const [currentPage, setCurrentPage] = useState(pagination.current_page);
@@ -38,7 +38,7 @@ export default function Index({ title, auth, flash, search, claimcustomers, pagi
 
     const onPageChange = (page: number) => {
         router.get(
-            route("transaction.claim-customer.index"),
+            route("transaction.claim-to-suppliers.index"),
             { search: searchQuery, page, status: statusFilter },
             {
                 preserveState: true,
@@ -52,7 +52,7 @@ export default function Index({ title, auth, flash, search, claimcustomers, pagi
     const onRowsPerPageChange = (newRowsPerPage: number, page: number) => {
         setRowsPerPage(newRowsPerPage);
         router.get(
-            route("transaction.claim-customer.index"),
+            route("transaction.claim-to-suppliers.index"),
             { search: searchQuery, page, per_page: newRowsPerPage, status: statusFilter },
             {
                 preserveState: true,
@@ -66,7 +66,7 @@ export default function Index({ title, auth, flash, search, claimcustomers, pagi
     const onSearchChange = (event: ChangeEvent<HTMLInputElement>) => {
         setSearchQuery(event.target.value);
         router.get(
-            route("transaction.claim-customer.index"),
+            route("transaction.claim-to-suppliers.index"),
             { search: event.target.value, page: 1, status: statusFilter },
             {
                 preserveState: true,
@@ -81,7 +81,7 @@ export default function Index({ title, auth, flash, search, claimcustomers, pagi
             const formattedDate = format(date, "yyyy-MM-dd");
             setStartDate(formattedDate);
             router.get(
-                route("transaction.claim-customer.index"),
+                route("transaction.claim-to-suppliers.index"),
                 { search: searchQuery, page: 1, start_date: formattedDate, end_date: endDate, status: statusFilter },
                 {
                     preserveState: true,
@@ -97,7 +97,7 @@ export default function Index({ title, auth, flash, search, claimcustomers, pagi
             const formattedDate = format(date, "yyyy-MM-dd");
             setEndDate(formattedDate);
             router.get(
-                route("transaction.claim-customer.index"),
+                route("transaction.claim-to-suppliers.index"),
                 { search: searchQuery, page: 1, start_date: startDate, end_date: formattedDate, status: statusFilter },
                 {
                     preserveState: true,
@@ -108,45 +108,50 @@ export default function Index({ title, auth, flash, search, claimcustomers, pagi
         }
     };
 
-    const columns: TableColumn<ClaimCustomer>[] = [
+    const columns: TableColumn<ClaimSupplier>[] = [
         {
             name: "ID",
-            selector: (row: ClaimCustomer) => row.id,
+            selector: (row: ClaimSupplier) => row.id,
             sortable: true,
         },
         {
-            name: "Transaction ID",
-            selector: (row: ClaimCustomer) => row.transaction?.id,
+            name: "Purchase ID",
+            selector: (row: ClaimSupplier) => row.purchase?.id,
+            sortable: true,
+        },
+        {
+            name: "Supplier",
+            selector: (row: ClaimSupplier) => row.supplier?.supplier_name,
             sortable: true,
         },
         {
             name: "Product Name",
-            selector: (row: ClaimCustomer) => row.product?.product_name,
+            selector: (row: ClaimSupplier) => row.product?.product_name,
             sortable: true,
             width: '10%'
         },
         {
             name: "Quantity",
-            selector: (row: ClaimCustomer) => row.quantity,
+            selector: (row: ClaimSupplier) => row.quantity,
             sortable: true,
             width: '10%'
         },
         {
             name: "Status",
-            selector: (row: ClaimCustomer) => row.status,
+            selector: (row: ClaimSupplier) => row.status,
             sortable: true,
             width: '10%'
         },
         {
             name: "Created At",
-            selector: (row: ClaimCustomer) =>
+            selector: (row: ClaimSupplier) =>
                 format(new Date(row.created_at), "yyyy-MM-dd HH:mm:ss"),
             sortable: true,
             width: '15%'
         },
         {
             name: "Updated At",
-            selector: (row: ClaimCustomer) =>
+            selector: (row: ClaimSupplier) =>
                 format(new Date(row.updated_at), "yyyy-MM-dd HH:mm:ss"),
             sortable: true,
             width: '15%'
@@ -155,10 +160,10 @@ export default function Index({ title, auth, flash, search, claimcustomers, pagi
             name: "Action",
             width: '30%',
             center: true,
-            cell: (row: ClaimCustomer) => (
+            cell: (row: ClaimSupplier) => (
                 <div className="flex space-x-4">
                     <button
-                        onClick={() => viewDetailClaimCustomer(row.id)}
+                        onClick={() => viewDetailClaimSupplier(row.id)}
                         className="font-medium text-green-500 hover:underline dark:text-red-300"
                     >
                         Detail
@@ -168,7 +173,7 @@ export default function Index({ title, auth, flash, search, claimcustomers, pagi
         },
     ];
 
-    const viewDetailClaimCustomer = async (id : string) => {
+    const viewDetailClaimSupplier = async (id : string) => {
         withReactContent(Swal).fire({
             title: <i>Enter password to access this view</i>,
             input: 'password',
@@ -191,7 +196,7 @@ export default function Index({ title, auth, flash, search, claimcustomers, pagi
                     }});
 
                     if(res.data.indctr === 1){
-                        router.get(route('transaction.claim-customers.show', {claim_customer : id}));
+                        router.get(route('transaction.claim-to-suppliers.show', {claim_customer : id}));
                     }else{
                         Swal.fire({
                             icon: "warning",
@@ -210,6 +215,17 @@ export default function Index({ title, auth, flash, search, claimcustomers, pagi
               }
             },
           })
+    }
+
+    const exportHandle = () => {
+        const params = new URLSearchParams({
+            start_date: startDate,
+            end_date: endDate,
+            status: statusFilter
+        });
+
+        const url = route('report.exports.claim-to-suppliers.export-data') + '?' + params.toString();
+        window.location.href = url;
     }
 
     return (
@@ -264,7 +280,7 @@ export default function Index({ title, auth, flash, search, claimcustomers, pagi
                         <Label htmlFor="btn-add" value="Add Claim" />
 
                         <Button
-                            href={route("transaction.claim-customers.create")}
+                            href={route("transaction.claim-to-suppliers.create")}
                             className="w-40 hover:bg-cyan-800"
                         >
                             <HiOutlinePlus className="mr-2 h-5 w-5" />
@@ -275,7 +291,7 @@ export default function Index({ title, auth, flash, search, claimcustomers, pagi
                 <div className="flex justify-between items-center mt-4">
                     <div className="flex space-x-4">
                         <Button.Group>
-                            <Button href={route('master.exports.products.export-data', 'xlsx')} color="green">
+                            <Button onClick={exportHandle} color="green">
                                 Excel
                             </Button>
                         </Button.Group>
@@ -292,7 +308,7 @@ export default function Index({ title, auth, flash, search, claimcustomers, pagi
                 <div className="overflow-x-auto">
                     <DataTable
                         columns={columns}
-                        data={claimcustomers}
+                        data={claimsuppliers}
                         pagination
                         paginationServer
                         paginationPerPage={5}

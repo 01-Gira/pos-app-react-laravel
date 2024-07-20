@@ -182,6 +182,18 @@ export interface ClaimCustomer {
     updated_at : Date;
 }
 
+export interface ClaimSupplier {
+    id : string;
+    purchase: Purchase;
+    supplier: Supplier;
+    product: Product;
+    quantity: number;
+    status: string;
+    description : string;
+    created_at : Date;
+    updated_at : Date;
+}
+
 export type PageProps<
     T extends Record<string, unknown> = Record<string, unknown>
 > = T & {
@@ -195,6 +207,8 @@ export type PageProps<
     transactions: Transaction[];
     claimcustomers: ClaimCustomer[];
     claimcustomer: ClaimCustomer;
+    claimsuppliers: ClaimSupplier[];
+    claimsupplier: ClaimSupplier;
     products: Product[];
     discounts: Discount[];
     product: Product;

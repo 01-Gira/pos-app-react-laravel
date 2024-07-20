@@ -4,6 +4,7 @@ import { CSVLink } from 'react-csv';
 // import { jsPDF } from 'jspdf';
 // import 'jspdf-autotable';
 import * as XLSX from 'xlsx';
+import Swal from "sweetalert2";
 
 export const tailwindConfig = () => {
     // Tailwind config
@@ -89,3 +90,14 @@ export const exportExcel = (data) => {
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Sheet1');
     XLSX.writeFile(workbook, 'table.xlsx');
   };
+
+export const Toast = Swal.mixin({
+    toast: true,
+    position: 'top-right',
+    customClass: {
+      popup: 'colored-toast',
+    },
+    showConfirmButton: false,
+    timer: 1500,
+    timerProgressBar: true,
+  })

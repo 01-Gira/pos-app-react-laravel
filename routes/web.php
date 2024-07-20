@@ -7,6 +7,7 @@ use App\Http\Controllers\DownloadController;
 use App\Http\Controllers\CashierController;
 use App\Http\Controllers\PurchaseProductController;
 use App\Http\Controllers\ClaimCustomerController;
+use App\Http\Controllers\ClaimToSupplierController;
 
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\DiscountController;
@@ -66,6 +67,9 @@ Route::middleware('auth')->group(function () {
 
         Route::get('claim-customer/verify-transaction/{transaction_id}', [ClaimCustomerController::class, 'verifyTransaction'])->name('transaction.claim-customers.verify-transaction');
 
+        Route::resource('claim-to-supplier', ClaimToSupplierController::class)->names('transaction.claim-to-suppliers');
+        Route::get('claim-customer/verify-purchase/{purchase_id}', [ClaimCustomerController::class, 'verifyTransaction'])->name('transaction.claim-to-suppliers.verify-transaction');
+
     });
 
     Route::group(['prefix' => 'master'], function() {
@@ -121,7 +125,8 @@ Route::get('/categories/export-data/{format}', [CategoryController::class, 'expo
 
 Route::get('/products/export-data/{format}', [ProductController::class, 'exportData'])->name('master.exports.products.export-data');
 
-Route::get('/transactions/export-data/{type}', [ReportTransactionController::class, 'exportData'])->name('report.exports.transactions.export-data');
+Route::get('/report/transactions/export-data/{type}', [ReportTransactionController::class, 'exportData'])->name('report.exports.transactions.export-data');
 
+Route::get('/transactions/claim-customers/export-data', [ClaimCustomerController::class, 'exportData'])->name('report.exports.claim-customers.export-data');
 
 require __DIR__.'/auth.php';

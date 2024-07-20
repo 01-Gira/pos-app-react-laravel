@@ -6,15 +6,15 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 
-class ClaimCustomer extends Model
+class ClaimToSupplier extends Model
 {
     use HasFactory, HasUuids;
 
-    protected $fillable = ['transaction_id', 'status', 'product_id', 'quantity', 'description'];
+    protected $fillable = ['purchase_id', 'supplier_id', 'product_id',  'quantity', 'description', 'status'];
 
-    public function transaction()
+    public function purchase()
     {
-        return $this->belongsTo(Transaction::class);
+        return $this->belongsTo(Purchase::class);
     }
 
     public function product()
@@ -26,7 +26,7 @@ class ClaimCustomer extends Model
     {
         return $query
         ->when(isset($filters['search']), function ($query) use ($filters) {
-            return $query->where('transaction_id', 'like', "%{$filters['search']}%")
+            return $query->where('purchase_id', 'like', "%{$filters['search']}%")
                          ->orWhere('status', 'like', "%{$filters['search']}%")
                          ->orWhereHas('product', function ($query) use ($filters) {
                             $query->where('product_name', 'like', "%{$filters['search']}%");
@@ -41,7 +41,7 @@ class ClaimCustomer extends Model
         ->when($filters['status'], function ($query, $status) {
             return $query->where('status', $status);
         })
-        ->with('transaction', 'product')
+        ->with('purchase', 'product')
         ->orderByDesc('created_at');
     }
 }

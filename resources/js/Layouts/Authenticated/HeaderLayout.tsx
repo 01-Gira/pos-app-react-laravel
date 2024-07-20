@@ -5,6 +5,7 @@ import Echo from 'laravel-echo';
 
 import {
     Dispatch,
+    FormEventHandler,
     PropsWithChildren,
     SetStateAction,
     useEffect,
@@ -22,6 +23,11 @@ declare global {
     interface Window {
         Echo: any;
     }
+}
+
+const handleLogout : FormEventHandler = async(e) => {
+    e.preventDefault();
+    await router.post(route('logout'));
 }
 
 
@@ -117,7 +123,10 @@ export default function HeaderLayout({
                         <hr className="w-px h-6 bg-slate-200 dark:bg-slate-700 border-none" />
                         <Dropdown label="" dismissOnClick={false} renderTrigger={() => <span>{user.store.store_name}</span>}>
                             <Dropdown.Item href={route("setting.profile.edit")}>Profile</Dropdown.Item>
-                            <Dropdown.Item href={route("logout")} formMethod="post">Sign out</Dropdown.Item>
+                            <form onSubmit={handleLogout}>
+                                <Dropdown.Item type="submit">Sign out</Dropdown.Item>
+
+                            </form>
                         </Dropdown>
 
                     </div>
