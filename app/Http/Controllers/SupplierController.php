@@ -108,6 +108,7 @@ class SupplierController extends Controller
             $logs->insertLog('Supplier.store : Successfully create supplier');
 
             return to_route('master.suppliers.index')->with([
+                'title' => 'Success',
                 'type_message' => 'success',
                 'message' => 'Successfully create supplier'
             ]);
@@ -117,7 +118,8 @@ class SupplierController extends Controller
             DB::connection('pgsql')->rollback();
 
             return to_route('master.suppliers.index')->with([
-                'type_message' => 'warning',
+                'title' => 'Error',
+                'type_message' => 'error',
                 'message' => 'Oops Something Went Wrong! Message : ' . $th->getMessage()
             ]);
         }
@@ -165,6 +167,7 @@ class SupplierController extends Controller
             $logs->insertLog('Supplier.update : Successfully update supplier');
 
             return to_route('master.suppliers.index')->with([
+                'title' => 'Success',
                 'type_message' => 'success',
                 'message' => 'Successfully update supplier'
             ]);
@@ -173,7 +176,8 @@ class SupplierController extends Controller
              DB::connection('pgsql')->rollback();
 
             return to_route('master.suppliers.index')->with([
-                'type_message' => 'warning',
+                'title' => 'Error',
+                'type_message' => 'error',
                 'message' => 'Oops Something Went Wrong! Message : ' . $th->getMessage()
             ]);
         }
@@ -196,6 +200,7 @@ class SupplierController extends Controller
             $logs->insertLog('Supplier.delete : Successfully delete supplier');
 
             return to_route('master.suppliers.index')->with([
+                'title' => 'Success',
                 'type_message' => 'success',
                 'message' => 'Supplier deleted successfully'
             ]);
@@ -203,7 +208,8 @@ class SupplierController extends Controller
             DB::connection('pgsql')->rollback();
 
             return to_route('master.suppliers.index')->with([
-                'type_message' => 'warning',
+                'title' => 'Error',
+                'type_message' => 'error',
                 'message' => 'Oops Something Went Wrong! Message : ' . $th->getMessage()
             ]);
         }

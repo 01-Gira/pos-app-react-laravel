@@ -27,20 +27,17 @@ use App\Exports\CategoriesExport;
 use Maatwebsite\Excel\Facades\Excel;
 
 Route::get('/', function () {
-    return Inertia::render('Welcome', [
-        'canLogin' => Route::has('login'),
-        'canRegister' => Route::has('register'),
-        'laravelVersion' => Application::VERSION,
-        'phpVersion' => PHP_VERSION,
-    ]);
+    return redirect('/login');
 });
-
-Route::get('/dashboard', function () {
-    return Inertia::render('Dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
 
 
 Route::middleware('auth')->group(function () {
+
+    Route::get('/dashboard', function () {
+        return Inertia::render('Dashboard');
+    })->name('dashboard');
+
+
 
     Route::get('notifications', [NotificationController::class, 'index'])->name('notifications.index');
     Route::put('notifications', [NotificationController::class, 'update'])->name('notifications.update');

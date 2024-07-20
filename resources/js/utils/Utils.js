@@ -1,9 +1,9 @@
 import { useState } from "react";
 import resolveConfig from "tailwindcss/resolveConfig";
-import { CSVLink } from 'react-csv';
+import { CSVLink } from "react-csv";
 // import { jsPDF } from 'jspdf';
 // import 'jspdf-autotable';
-import * as XLSX from 'xlsx';
+import * as XLSX from "xlsx";
 import Swal from "sweetalert2";
 
 export const tailwindConfig = () => {
@@ -58,18 +58,16 @@ export const classCustomSwal = {
         "mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:mt-0 sm:w-auto",
 };
 
-
 export const getFirstDayOfMonth = () => {
     const date = new Date();
     return new Date(date.getFullYear(), date.getMonth(), 1);
-}
+};
 
 // Fungsi untuk mendapatkan tanggal akhir bulan
 export const getLastDayOfMonth = () => {
     const date = new Date();
     return new Date(date.getFullYear(), date.getMonth() + 1, 0);
-}
-
+};
 
 export function randomColor() {
     const r = Math.floor(Math.random() * 256); // Random nilai untuk red (0 to 255)
@@ -80,24 +78,25 @@ export function randomColor() {
 
 export const exportPDF = () => {
     const doc = new jsPDF();
-    doc.autoTable({ html: '#data-table' });
-    doc.save('table.pdf');
-  };
+    doc.autoTable({ html: "#data-table" });
+    doc.save("table.pdf");
+};
 
 export const exportExcel = (data) => {
     const worksheet = XLSX.utils.json_to_sheet(data);
     const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Sheet1');
-    XLSX.writeFile(workbook, 'table.xlsx');
-  };
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Sheet1");
+    XLSX.writeFile(workbook, "table.xlsx");
+};
 
 export const Toast = Swal.mixin({
     toast: true,
-    position: 'top-right',
+    position: "top-right",
     customClass: {
-      popup: 'colored-toast',
+        popup: "colored-toast",
     },
     showConfirmButton: false,
-    timer: 1500,
+    showCloseButton: true,
+    timer: 2000,
     timerProgressBar: true,
-  })
+});

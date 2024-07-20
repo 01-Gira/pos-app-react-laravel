@@ -181,6 +181,7 @@ class ProductController extends Controller
             $logs->insertLog('Product.store : Successfully store data');
 
             return to_route('master.products.index')->with([
+                'title' => 'Success',
                 'type_message' => 'success',
                 'message' => 'Successfully store data product'
             ]);
@@ -189,7 +190,8 @@ class ProductController extends Controller
             DB::connection('pgsql')->rollback();
 
             return to_route('master.products.index')->with([
-                'type_message' => 'warning',
+                'title' => 'Error',
+                'type_message' => 'error',
                 'message' => 'Oops Something Went Wrong! Message : ' . $th->getMessage()
             ]);
         }
@@ -237,7 +239,7 @@ class ProductController extends Controller
             DB::connection('pgsql')->beginTransaction();
 
             $validated = $request->validate([
-                'barcode' => 'required|numeric|min:12|max:13',
+                'barcode' => 'required|numeric',
                 'product_name' => 'required|string|max:225',
                 'category_id' => 'required|uuid',
                 'price' => 'required|numeric',
@@ -265,6 +267,7 @@ class ProductController extends Controller
             $logs->insertLog('Product.update : Successfully updated product');
 
             return to_route('master.products.index')->with([
+                'title' => 'Success',
                 'type_message' => 'success',
                 'message' => 'Successfully updated product'
             ]);
@@ -273,7 +276,8 @@ class ProductController extends Controller
             DB::connection('pgsql')->rollback();
 
             return to_route('master.products.index')->with([
-                'type_message' => 'warning',
+                'title' => 'Error',
+                'type_message' => 'error',
                 'message' => 'Oops Something Went Wrong! Message : ' . $th->getMessage()
             ]);
         }
@@ -296,6 +300,7 @@ class ProductController extends Controller
             $logs->insertLog('Product.delete : Successfully delete product');
 
             return to_route('master.products.index')->with([
+                'title' => 'Success',
                 'type_message' => 'success',
                 'message' => 'Product deleted successfully'
             ]);
@@ -304,7 +309,8 @@ class ProductController extends Controller
             DB::connection('pgsql')->rollback();
 
             return to_route('master.products.index')->with([
-                'type_message' => 'warning',
+                'title' => 'Error',
+                'type_message' => 'error',
                 'message' => 'Oops Something Went Wrong! Message : ' . $th->getMessage()
             ]);
         }
@@ -336,14 +342,17 @@ class ProductController extends Controller
             $logs->insertLog('Product.discount : Successfully add discount to product');
 
             return to_route('master.products.index')->with([
+                'title' => 'Success',
                 'type_message' => 'success',
                 'message' => 'Successfully add discount to product'
             ]);
+            
         } catch (\Throwable $th) {
             DB::connection('pgsql')->rollback();
 
             return to_route('master.products.index')->with([
-                'type_message' => 'warning',
+                'title' => 'Error',
+                'type_message' => 'error',
                 'message' => 'Oops Something Went Wrong! Message : ' . $th->getMessage()
             ]);
         }
@@ -402,13 +411,15 @@ class ProductController extends Controller
             ]);
 
             return to_route('master.products.index')->with([
+                'title' => 'Success',
                 'type_message' => 'success',
                 'message' => 'Process export is on process, you will be notified when is ready to download'
             ]);
         } catch (\Throwable $th) {
             return to_route('master.products.index')->with([
-                'type_message' => 'warning',
-                'message' => 'Oops Something Went Wrong! Message : ' . $th
+                'title' => 'Error',
+                'type_message' => 'error',
+                'message' => 'Oops Something Went Wrong! Message : ' . $th->getMessage()
             ]);
         }
     }

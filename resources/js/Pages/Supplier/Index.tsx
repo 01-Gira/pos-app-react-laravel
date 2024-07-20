@@ -29,14 +29,19 @@ export default function Index({
     pagination,
     search,
     flash,
-    start_date, end_date,
+    start_date,
+    end_date,
 }: PageProps) {
     const [pending, setPending] = useState(false);
     const [currentPage, setCurrentPage] = useState(pagination.current_page);
     const [searchQuery, setSearchQuery] = useState(search || "");
     const [rowsPerPage, setRowsPerPage] = useState(pagination.per_page);
-    const [startDate, setStartDate] = useState(format(new Date(start_date), "yyyy-MM-dd"));
-    const [endDate, setEndDate] = useState(format(new Date(end_date), "yyyy-MM-dd"));
+    const [startDate, setStartDate] = useState(
+        format(new Date(start_date), "yyyy-MM-dd")
+    );
+    const [endDate, setEndDate] = useState(
+        format(new Date(end_date), "yyyy-MM-dd")
+    );
 
     useEffect(() => {
         setCurrentPage(pagination.current_page);
@@ -80,11 +85,16 @@ export default function Index({
             setStartDate(formattedDate);
             router.get(
                 route("master.suppliers.index"),
-                { search: searchQuery, page: 1, start_date: formattedDate, end_date: endDate },
+                {
+                    search: searchQuery,
+                    page: 1,
+                    start_date: formattedDate,
+                    end_date: endDate,
+                },
                 {
                     preserveState: true,
-                    onStart:() => setPending(true),
-                    onFinish:() => setPending(false)
+                    onStart: () => setPending(true),
+                    onFinish: () => setPending(false),
                 }
             );
         }
@@ -96,11 +106,16 @@ export default function Index({
             setEndDate(formattedDate);
             router.get(
                 route("master.suppliers.index"),
-                { search: searchQuery, page: 1, start_date: startDate, end_date: formattedDate },
+                {
+                    search: searchQuery,
+                    page: 1,
+                    start_date: startDate,
+                    end_date: formattedDate,
+                },
                 {
                     preserveState: true,
-                    onStart:() => setPending(true),
-                    onFinish:() => setPending(false)
+                    onStart: () => setPending(true),
+                    onFinish: () => setPending(false),
                 }
             );
         }
@@ -122,14 +137,6 @@ export default function Index({
                 destroy(route("master.suppliers.destroy", { id }), {
                     onSuccess: () => reset(),
                 });
-            } else {
-                Swal.fire({
-                    buttonsStyling: false,
-                    customClass: classCustomSwal,
-                    icon: "info",
-                    title: "info",
-                    text: "Your data is safe!",
-                });
             }
         });
     };
@@ -137,11 +144,6 @@ export default function Index({
     const { delete: destroy, put, processing, errors, reset } = useForm();
 
     const columns: TableColumn<Supplier>[] = [
-        {
-            name: "Uniq Code",
-            selector: (row: Supplier) => row.uniq_code,
-            sortable: true,
-        },
         {
             name: "Supplier Name",
             selector: (row: Supplier) => row.supplier_name,
@@ -199,35 +201,38 @@ export default function Index({
                 confirmButtonText: "Yes",
                 confirmButtonColor: "#3085d6",
                 showLoaderOnConfirm: true,
-                preConfirm : async () => {
+                preConfirm: async () => {
                     try {
                         const formData = new FormData();
-                        formData.append('file', file);
-                        const res = await axios.post(route('master.suppliers.import-data'), formData, {
-                            headers: {
-                                'Content-Type': 'multipart/form-data'
+                        formData.append("file", file);
+                        const res = await axios.post(
+                            route("master.suppliers.import-data"),
+                            formData,
+                            {
+                                headers: {
+                                    "Content-Type": "multipart/form-data",
+                                },
                             }
-                        })
+                        );
 
-                        e.target.value = '';
+                        e.target.value = "";
                         return res.data.message;
                     } catch (error) {
                         Swal.showValidationMessage(`
                             Request failed: ${error}
                           `);
-
                     }
-                }
+                },
             }).then((result) => {
                 if (result.isConfirmed) {
                     Swal.fire({
                         title: `${result.value}`,
-                        confirmButtonText: 'OK'
+                        confirmButtonText: "OK",
                     }).then((result) => {
-                      if (result.isConfirmed) {
-                        setPending(true);
-                        window.location.reload();
-                      }
+                        if (result.isConfirmed) {
+                            setPending(true);
+                            window.location.reload();
+                        }
                     });
                 }
             });
@@ -249,13 +254,12 @@ export default function Index({
                 <h1 className="dark:text-white text-lg">Master {title}</h1>
                 <div className="grid grid-cols-2 gap-4 mt-5 mb-5">
                     <div>
-                        <Label
-                            htmlFor="start_date"
-                            value="Start Date"
-                        />
+                        <Label htmlFor="start_date" value="Start Date" />
                         <Datepicker
                             id="start_date"
-                            onSelectedDateChanged={date => onStartDateChange(date)}
+                            onSelectedDateChanged={(date) =>
+                                onStartDateChange(date)
+                            }
                             value={startDate}
                         />
                     </div>
@@ -263,7 +267,9 @@ export default function Index({
                         <Label htmlFor="end_date" value="End Date" />
                         <Datepicker
                             id="end_date"
-                            onSelectedDateChanged={date => onEndDateChange(date)}
+                            onSelectedDateChanged={(date) =>
+                                onEndDateChange(date)
+                            }
                             value={endDate}
                         />
                     </div>
@@ -274,19 +280,22 @@ export default function Index({
                         <div className="mb-2 block">
                             <Label htmlFor="btn-add" value="Add Supplier" />
                         </div>
-                            <Button
-                                href={route("master.suppliers.create")}
-                                className="w-40 hover:bg-cyan-800"
-                            >
-                                <HiOutlinePlus className="mr-2 h-5 w-5" />
-                                Add Data
-                            </Button>
-                        </div>
+                        <Button
+                            href={route("master.suppliers.create")}
+                            className="w-40 hover:bg-cyan-800"
+                        >
+                            <HiOutlinePlus className="mr-2 h-5 w-5" />
+                            Add Data
+                        </Button>
+                    </div>
                     <div>
                         <div className="mb-2 block">
                             <Label htmlFor="file-upload" value="Import Data" />
                         </div>
-                        <FileInput id="file-upload" onChange={handleFileChange} />
+                        <FileInput
+                            id="file-upload"
+                            onChange={handleFileChange}
+                        />
                     </div>
                 </div>
 

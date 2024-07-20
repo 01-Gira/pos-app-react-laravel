@@ -92,6 +92,7 @@ class CategoryController extends Controller
             $logs->insertLog('Category.store : Successfully create category');
 
             return Redirect::back()->with([
+                'title' => 'Success',
                 'type_message' => 'success',
                 'message' => 'Successfully create category'
             ]);
@@ -99,7 +100,8 @@ class CategoryController extends Controller
             DB::connection('pgsql')->rollback();
 
             return Redirect::back()->with([
-                'type_message' => 'warning',
+                'title' => 'Error',
+                'type_message' => 'error',
                 'message' => 'Oops Something Went Wrong! Message : ' . $th->getMessage()
             ]);
         }
@@ -142,15 +144,17 @@ class CategoryController extends Controller
             DB::connection('pgsql')->commit();
 
             return Redirect::back()->with([
+                'title' => 'Success',
                 'type_message' => 'success',
-                'message' => 'Category updated successfully', 201
+                'message' => 'Category updated successfully'
             ]);
 
         } catch (\Throwable $th) {
             DB::connection('pgsql')->rollback();
 
             return Redirect::back()->with([
-                'type_message' => 'warning',
+                'title' => 'Error',
+                'type_message' => 'error',
                 'message' => 'Oops Something Went Wrong! Message : ' . $th->getMessage()
             ]);
         }
@@ -173,6 +177,7 @@ class CategoryController extends Controller
             $logs->insertLog('Category.delete : Successfully delete category');
 
             return Redirect::back()->with([
+                'title' => 'Success',
                 'type_message' => 'success',
                 'message' => 'Successfully delete category'
             ]);
@@ -181,7 +186,8 @@ class CategoryController extends Controller
             DB::connection('pgsql')->rollback();
 
             return Redirect::back()->with([
-                'type_message' => 'warning',
+                'title' => 'Error',
+                'type_message' => 'error',
                 'message' => 'Oops Something Went Wrong! Message : ' . $th->getMessage()
             ]);
         }

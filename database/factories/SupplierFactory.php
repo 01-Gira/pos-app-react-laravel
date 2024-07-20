@@ -17,7 +17,6 @@ class SupplierFactory extends Factory
     public function definition(): array
     {
         return [
-            'uniq_code' => fake()->word(),
             'supplier_name' => fake()->name(),
             'address' => fake()->address(),
             'phone_no' => '081293062114',

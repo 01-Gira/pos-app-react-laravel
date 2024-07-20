@@ -1,10 +1,5 @@
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
-import {
-    ClaimCustomer,
-    HoldTransaction,
-    PageProps,
-
-} from "@/types";
+import { ClaimCustomer, HoldTransaction, PageProps } from "@/types";
 import { Head, router } from "@inertiajs/react";
 import axios from "axios";
 import {
@@ -19,31 +14,43 @@ import {
     TextInput,
 } from "flowbite-react";
 import { ChangeEvent, useEffect, useRef, useState } from "react";
-import { formatRupiah } from "@/utils/Utils";
+import { formatRupiah, Toast } from "@/utils/Utils";
 import { BeatLoader, ClipLoader } from "react-spinners";
 import { HiOutlineExclamationCircle, HiOutlinePlus } from "react-icons/hi";
 import DataTable, { TableColumn } from "react-data-table-component";
 import { format } from "date-fns";
 import Swal from "sweetalert2";
 import withReactContent from "sweetalert2-react-content";
-export default function Index({ title, auth, flash, search, claimcustomers, pagination, start_date, end_date }: PageProps) {
-
+export default function Index({
+    title,
+    auth,
+    flash,
+    search,
+    claimcustomers,
+    pagination,
+    start_date,
+    end_date,
+}: PageProps) {
     const [pending, setPending] = useState(false);
     const [currentPage, setCurrentPage] = useState(pagination.current_page);
     const [searchQuery, setSearchQuery] = useState(search || "");
     const [rowsPerPage, setRowsPerPage] = useState(pagination.per_page);
-    const [startDate, setStartDate] = useState(format(new Date(start_date), "yyyy-MM-dd"));
-    const [endDate, setEndDate] = useState(format(new Date(end_date), "yyyy-MM-dd"));
+    const [startDate, setStartDate] = useState(
+        format(new Date(start_date), "yyyy-MM-dd")
+    );
+    const [endDate, setEndDate] = useState(
+        format(new Date(end_date), "yyyy-MM-dd")
+    );
     const [statusFilter, setStatusFilter] = useState(status || "");
 
     const onPageChange = (page: number) => {
         router.get(
-            route("transaction.claim-customer.index"),
+            route("transaction.claim-customers.index"),
             { search: searchQuery, page, status: statusFilter },
             {
                 preserveState: true,
-                onStart:() => setPending(true),
-                onFinish:() => setPending(false)
+                onStart: () => setPending(true),
+                onFinish: () => setPending(false),
             }
         );
         setCurrentPage(page);
@@ -52,12 +59,17 @@ export default function Index({ title, auth, flash, search, claimcustomers, pagi
     const onRowsPerPageChange = (newRowsPerPage: number, page: number) => {
         setRowsPerPage(newRowsPerPage);
         router.get(
-            route("transaction.claim-customer.index"),
-            { search: searchQuery, page, per_page: newRowsPerPage, status: statusFilter },
+            route("transaction.claim-customers.index"),
+            {
+                search: searchQuery,
+                page,
+                per_page: newRowsPerPage,
+                status: statusFilter,
+            },
             {
                 preserveState: true,
-                onStart:() => setPending(true),
-                onFinish:() => setPending(false)
+                onStart: () => setPending(true),
+                onFinish: () => setPending(false),
             }
         );
         setCurrentPage(page);
@@ -66,12 +78,12 @@ export default function Index({ title, auth, flash, search, claimcustomers, pagi
     const onSearchChange = (event: ChangeEvent<HTMLInputElement>) => {
         setSearchQuery(event.target.value);
         router.get(
-            route("transaction.claim-customer.index"),
+            route("transaction.claim-customers.index"),
             { search: event.target.value, page: 1, status: statusFilter },
             {
                 preserveState: true,
-                onStart:() => setPending(true),
-                onFinish:() => setPending(false)
+                onStart: () => setPending(true),
+                onFinish: () => setPending(false),
             }
         );
     };
@@ -81,12 +93,18 @@ export default function Index({ title, auth, flash, search, claimcustomers, pagi
             const formattedDate = format(date, "yyyy-MM-dd");
             setStartDate(formattedDate);
             router.get(
-                route("transaction.claim-customer.index"),
-                { search: searchQuery, page: 1, start_date: formattedDate, end_date: endDate, status: statusFilter },
+                route("transaction.claim-customers.index"),
+                {
+                    search: searchQuery,
+                    page: 1,
+                    start_date: formattedDate,
+                    end_date: endDate,
+                    status: statusFilter,
+                },
                 {
                     preserveState: true,
-                    onStart:() => setPending(true),
-                    onFinish:() => setPending(false)
+                    onStart: () => setPending(true),
+                    onFinish: () => setPending(false),
                 }
             );
         }
@@ -97,12 +115,18 @@ export default function Index({ title, auth, flash, search, claimcustomers, pagi
             const formattedDate = format(date, "yyyy-MM-dd");
             setEndDate(formattedDate);
             router.get(
-                route("transaction.claim-customer.index"),
-                { search: searchQuery, page: 1, start_date: startDate, end_date: formattedDate, status: statusFilter },
+                route("transaction.claim-customers.index"),
+                {
+                    search: searchQuery,
+                    page: 1,
+                    start_date: startDate,
+                    end_date: formattedDate,
+                    status: statusFilter,
+                },
                 {
                     preserveState: true,
-                    onStart:() => setPending(true),
-                    onFinish:() => setPending(false)
+                    onStart: () => setPending(true),
+                    onFinish: () => setPending(false),
                 }
             );
         }
@@ -123,37 +147,37 @@ export default function Index({ title, auth, flash, search, claimcustomers, pagi
             name: "Product Name",
             selector: (row: ClaimCustomer) => row.product?.product_name,
             sortable: true,
-            width: '10%'
+            width: "10%",
         },
         {
             name: "Quantity",
             selector: (row: ClaimCustomer) => row.quantity,
             sortable: true,
-            width: '10%'
+            width: "10%",
         },
         {
             name: "Status",
             selector: (row: ClaimCustomer) => row.status,
             sortable: true,
-            width: '10%'
+            width: "10%",
         },
         {
             name: "Created At",
             selector: (row: ClaimCustomer) =>
                 format(new Date(row.created_at), "yyyy-MM-dd HH:mm:ss"),
             sortable: true,
-            width: '15%'
+            width: "15%",
         },
         {
             name: "Updated At",
             selector: (row: ClaimCustomer) =>
                 format(new Date(row.updated_at), "yyyy-MM-dd HH:mm:ss"),
             sortable: true,
-            width: '15%'
+            width: "15%",
         },
         {
             name: "Action",
-            width: '30%',
+            width: "30%",
             center: true,
             cell: (row: ClaimCustomer) => (
                 <div className="flex space-x-4">
@@ -168,49 +192,68 @@ export default function Index({ title, auth, flash, search, claimcustomers, pagi
         },
     ];
 
-    const viewDetailClaimCustomer = async (id : string) => {
+    const viewDetailClaimCustomer = async (id: string) => {
         withReactContent(Swal).fire({
             title: <i>Enter password to access this view</i>,
-            input: 'password',
+            input: "password",
             showCancelButton: true,
             showConfirmButton: true,
             showLoaderOnConfirm: true,
             preConfirm: async () => {
-              const input = Swal.getInput()?.value;
-              console.log();
-              if(input == ''){
-                Swal.fire({
-                    icon: "warning",
-                    title: `Input can not be empty`,
-                    confirmButtonText: 'OK'
-                });
-              }else{
-                try {
-                    const res = await axios.get(route('check-password'), { params : {
-                        password: input
-                    }});
+                const input = Swal.getInput()?.value;
+                console.log();
+                if (input == "") {
+                    await Toast.fire({
+                        icon: "warning",
+                        title: "Warning",
+                        text: `Input can not be empty`,
+                    });
+                } else {
+                    try {
+                        const res = await axios.get(route("check-password"), {
+                            params: {
+                                password: input,
+                            },
+                        });
 
-                    if(res.data.indctr === 1){
-                        router.get(route('transaction.claim-customers.show', {claim_customer : id}));
-                    }else{
-                        Swal.fire({
-                            icon: "warning",
-                            title: res.data.message,
-                            confirmButtonText: 'OK'
+                        if (res.data.indctr === 1) {
+                            router.get(
+                                route("transaction.claim-customers.show", {
+                                    claim_customer: id,
+                                })
+                            );
+                        } else {
+                            await Toast.fire({
+                                icon: "warning",
+                                title: "Warning",
+                                text: res.data.message,
+                            });
+                        }
+                    } catch (error: any) {
+                        await Toast.fire({
+                            icon: "error",
+                            title: "Error",
+                            text: error.message,
                         });
                     }
-                } catch (error : any) {
-                    Swal.fire({
-                        icon: "warning",
-                        title: error.message,
-                        confirmButtonText: 'OK'
-                    });
                 }
-
-              }
             },
-          })
-    }
+        });
+    };
+
+    const exportHandle = async () => {
+        const params = new URLSearchParams({
+            start_date: startDate,
+            end_date: endDate,
+            status: statusFilter,
+        });
+
+        const url =
+            route("report.exports.claim-customers.export-data") +
+            "?" +
+            params.toString();
+        window.location.href = url;
+    };
 
     return (
         <AuthenticatedLayout
@@ -227,13 +270,12 @@ export default function Index({ title, auth, flash, search, claimcustomers, pagi
                 <h1 className="dark:text-white text-lg">{title}</h1>
                 <div className="grid grid-cols-3 gap-4 mt-5 mb-5">
                     <div>
-                        <Label
-                            htmlFor="start_date"
-                            value="Start Date"
-                        />
+                        <Label htmlFor="start_date" value="Start Date" />
                         <Datepicker
                             id="start_date"
-                            onSelectedDateChanged={date => onStartDateChange(date)}
+                            onSelectedDateChanged={(date) =>
+                                onStartDateChange(date)
+                            }
                             value={startDate}
                         />
                     </div>
@@ -241,7 +283,9 @@ export default function Index({ title, auth, flash, search, claimcustomers, pagi
                         <Label htmlFor="end_date" value="End Date" />
                         <Datepicker
                             id="end_date"
-                            onSelectedDateChanged={date => onEndDateChange(date)}
+                            onSelectedDateChanged={(date) =>
+                                onEndDateChange(date)
+                            }
                             value={endDate}
                         />
                     </div>
@@ -275,7 +319,7 @@ export default function Index({ title, auth, flash, search, claimcustomers, pagi
                 <div className="flex justify-between items-center mt-4">
                     <div className="flex space-x-4">
                         <Button.Group>
-                            <Button href={route('master.exports.products.export-data', 'xlsx')} color="green">
+                            <Button onClick={exportHandle} color="green">
                                 Excel
                             </Button>
                         </Button.Group>
@@ -299,6 +343,8 @@ export default function Index({ title, auth, flash, search, claimcustomers, pagi
                         paginationTotalRows={pagination.total_items}
                         paginationDefaultPage={currentPage}
                         paginationRowsPerPageOptions={[5, 10, 25, 50]}
+                        onChangePage={onPageChange}
+                        onChangeRowsPerPage={onRowsPerPageChange}
                         persistTableHead
                         progressPending={pending}
                     />

@@ -40,23 +40,15 @@ export default function Index({ title, auth, flash }: PageProps) {
     const transactionId = transactions.length > 0 ? [transactions[0].id] : null;
 
     const newTransaction = async () => {
+        setLoading(true);
         try {
-            setLoading(true);
-
             if (transactionId) {
                 setLoading(false);
-                // Swal.fire({
-                //     buttonsStyling: false,
-                //     customClass: classCustomSwal,
-                //     icon: "info",
-                //     title: "Info",
-                //     text: "There is a transaction in progress. You can't create a new transaction",
-                // });
                 await Toast.fire({
                     icon: "warning",
                     title: "Warning",
                     text: "There is a transaction in progress. You can't create a new transaction",
-                  })
+                });
                 return;
             }
 
@@ -85,26 +77,21 @@ export default function Index({ title, auth, flash }: PageProps) {
                 ]);
             }
             setLoading(false);
-        } catch (error : any) {
+        } catch (error: any) {
             setLoading(false);
-
             await Toast.fire({
                 icon: "error",
                 title: "Error",
                 text: error.message,
-              })
-
-            // Swal.fire({
-            //     icon: "error",
-            //     title: "Error",
-            //     text: error.message,
-            // });
+            });
+        } finally {
+            setLoading(false);
         }
     };
 
     const getDataProduct = async (barcode: string) => {
+        setLoading(true);
         try {
-            setLoading(true);
             const res = await axios.get(
                 route("master.products.get-data-barcode", barcode)
             );
@@ -154,7 +141,7 @@ export default function Index({ title, auth, flash }: PageProps) {
                                     const newTransactionDetail: TransactionDetail =
                                         {
                                             id: product.id,
-                                            transaction_id: '',
+                                            transaction_id: "",
                                             quantity: 1,
                                             discount: product.discount,
                                             price: product.price,
@@ -164,8 +151,8 @@ export default function Index({ title, auth, flash }: PageProps) {
                                                 product.discount
                                             ),
                                             product: product,
-                                            created_at : new Date(),
-                                            updated_at : new Date(),
+                                            created_at: new Date(),
+                                            updated_at: new Date(),
                                         };
 
                                     return {
@@ -189,117 +176,78 @@ export default function Index({ title, auth, flash }: PageProps) {
             if (barcodeInput.current) {
                 barcodeInput.current.value = "";
             }
-        } catch (error : any) {
-            setLoading(false);
-
-            // Swal.fire({
-            //     icon: "error",
-            //     title: "Error",
-            //     text: error.message,
-            // });
-
+        } catch (error: any) {
             await Toast.fire({
                 icon: "error",
                 title: "Error",
                 text: error.message,
-              })
+            });
+        } finally {
+            setLoading(false);
         }
     };
 
     const saveTransaction = async () => {
+        setLoading(true);
         try {
-            setLoading(true);
-
-            if(!transactionId){
-                setLoading(false);
-
+            if (!transactionId) {
                 await Toast.fire({
                     icon: "info",
                     title: "Info",
                     text: "There is no transaction in progress or products list is empty",
-                  })
+                });
 
                 return;
             }
 
-            const res = await axios.post(
-                route("transaction.cashier.store"),
-                {
-                    transactions,
-                }
-            );
+            const res = await axios.post(route("transaction.cashier.store"), {
+                transactions,
+            });
 
-            if(res.data.indctr === 0){
-                // Swal.fire({
-                //     icon: "warning",
-                //     title: "Warning",
-                //     text: res.data.message,
-                // });
-
+            if (res.data.indctr === 0) {
                 await Toast.fire({
                     icon: "error",
                     title: "Error",
                     text: res.data.message,
-                  })
+                });
             }
-
-            setLoading(false);
-
-        } catch (error : any) {
-            setLoading(false);
-            // Swal.fire({
-            //     icon: "warning",
-            //     title: "Warning",
-            //     text: error.message,
-            // });
+        } catch (error: any) {
             await Toast.fire({
                 icon: "error",
                 title: "Error",
                 text: error.message,
-              })
+            });
+        } finally {
+            setLoading(false);
         }
     };
 
     const [modalHoldTransaction, setModalHoldTransaction] = useState(false);
 
     const holdTransaction = async (id: any, status: string) => {
+        setLoading(true);
         try {
-            setLoading(true);
-
             if (status === "hold" && !transactionId) {
-                setLoading(false);
-                // Swal.fire({
-                //     showCloseButton: false,
-                //     showConfirmButton: false,
-                //     icon: "info",
-                //     title: "Info",
-                //     text: "There is no transaction in progress",
-                // });
-
                 await Toast.fire({
                     icon: "warning",
                     title: "Warning",
                     text: "There is no transaction in progress",
-                  })
+                });
                 return;
             }
 
-            if (status === 'completed' && transactions && transactions.length > 0 && (transactions[0].payment_method === '' || transactions[0].payment_method === null)) {
-                setLoading(false);
-
-                // Swal.fire({
-                //     showCloseButton: false,
-                //     showConfirmButton: false,
-                //     icon: "info",
-                //     title: "Info",
-                //     text: "Please select payment method first! or product list is empty!",
-                // });
-
+            if (
+                status === "completed" &&
+                transactions &&
+                transactions.length > 0 &&
+                (transactions[0].payment_method === "" ||
+                    transactions[0].payment_method === null)
+            ) {
                 await Toast.fire({
                     icon: "warning",
                     title: "Warning",
                     text: "Please select payment method first! or product list is empty!",
-                  })
+                });
                 return;
             }
 
@@ -311,8 +259,6 @@ export default function Index({ title, auth, flash }: PageProps) {
                 }
             );
 
-            setLoading(false);
-
             if (res.data.indctr === 1) {
                 const transaction = res.data.transaction;
                 if (transaction) {
@@ -320,7 +266,8 @@ export default function Index({ title, auth, flash }: PageProps) {
                         setTransactions([
                             {
                                 id: transaction.id,
-                                transaction_details: transaction.transaction_details,
+                                transaction_details:
+                                    transaction.transaction_details,
                                 subtotal: transaction.subtotal,
                                 ppn: transaction.ppn,
                                 payment_method: transaction.payment_method,
@@ -328,7 +275,7 @@ export default function Index({ title, auth, flash }: PageProps) {
                                 total_payment: transaction.total_payment,
                                 created_at: new Date(),
                                 updated_at: new Date(),
-                                transaction_date: new Date()
+                                transaction_date: new Date(),
                             },
                         ]);
                         setOpenModalTableHoldTransaction(false);
@@ -346,38 +293,24 @@ export default function Index({ title, auth, flash }: PageProps) {
                     }
                 }
             } else {
-                // Swal.fire({
-                //     icon: "warning",
-                //     title: "Warning",
-                //     text: res.data.message,
-                // });
-
                 await Toast.fire({
                     icon: "warning",
                     title: "Warning",
                     text: res.data.message,
-                  })
+                });
 
                 return;
             }
-
-        } catch (error : any) {
-            setLoading(false);
-
-            // Swal.fire({
-            //     icon: "warning",
-            //     title: "Warning",
-            //     text: error.message,
-            // });
-
+        } catch (error: any) {
             await Toast.fire({
                 icon: "error",
                 title: "Error",
                 text: error.message,
-              })
+            });
+        } finally {
+            setLoading(false);
         }
     };
-
 
     const calculateTotalPrice = (
         price: number,
@@ -441,47 +374,36 @@ export default function Index({ title, auth, flash }: PageProps) {
     ];
 
     const listHoldTransaction = async () => {
-            try {
-                if (transactionId) {
-                    // Swal.fire({
-                    //     customClass: classCustomSwal,
-                    //     buttonsStyling: false,
-                    //     icon: "info",
-                    //     title: "Info",
-                    //     text: "There is a transaction in progress. You can't open list hold transaction",
-                    // });
-
-                    await Toast.fire({
-                        icon: "info",
-                        title: "Info",
-                        text: "There is a transaction in progress. You can't open list hold transaction",
-                      })
-
-                    return;
-                }
-
-                const res = await axios.get(
-                    route("transaction.cashier.get-data-transactions", "hold")
-                );
-                const transactions = res.data.transactions;
-                if (transactions) {
-                    setHoldTransactions(transactions);
-                }
-
-                setOpenModalTableHoldTransaction(true);
-            } catch (error : any) {
-                // Swal.fire({
-                //     icon: "warning",
-                //     title: "Warning",
-                //     text: error.message,
-                // });
-
+        setLoading(true);
+        try {
+            if (transactionId) {
                 await Toast.fire({
-                    icon: "error",
-                    title: "Error",
-                    text: error.message,
-                  })
+                    icon: "info",
+                    title: "Info",
+                    text: "There is a transaction in progress. You can't open list hold transaction",
+                });
+
+                return;
             }
+
+            const res = await axios.get(
+                route("transaction.cashier.get-data-transactions", "hold")
+            );
+            const transactions = res.data.transactions;
+            if (transactions) {
+                setHoldTransactions(transactions);
+            }
+
+            setOpenModalTableHoldTransaction(true);
+        } catch (error: any) {
+            await Toast.fire({
+                icon: "error",
+                title: "Error",
+                text: error.message,
+            });
+        } finally {
+            setLoading(false);
+        }
     };
 
     const [tableHoldTransactionId, setTableHoldTransactionId] = useState<
@@ -501,36 +423,29 @@ export default function Index({ title, auth, flash }: PageProps) {
     };
 
     const printReceipt = async () => {
+        setLoading(true);
         try {
-            if (!transactionId || transactions.some((t) => t.transaction_details?.length === 0)) {
-                // Swal.fire({
-                //     buttonsStyling: false,
-                //     customClass: classCustomSwal,
-                //     icon: "info",
-                //     title: "Info",
-                //     text: "There is no transaction in progress or products list is empty",
-                // });
+            if (
+                !transactionId ||
+                transactions.some((t) => t.transaction_details?.length === 0)
+            ) {
                 await Toast.fire({
                     icon: "warning",
                     title: "Warning",
                     text: "There is no transaction in progress or products list is empty",
-                  })
+                });
                 return;
             }
 
-            if (transactions[0].payment_method == '' || transactions[0].payment_method == null) {
-                // Swal.fire({
-                //     buttonsStyling: false,
-                //     customClass: classCustomSwal,
-                //     icon: "info",
-                //     title: "Info",
-                //     text: "Please select payment method first!",
-                // });
+            if (
+                transactions[0].payment_method == "" ||
+                transactions[0].payment_method == null
+            ) {
                 await Toast.fire({
                     icon: "warning",
                     title: "Warning",
                     text: "Please select payment method first!",
-                  })
+                });
                 return;
             }
 
@@ -541,19 +456,14 @@ export default function Index({ title, auth, flash }: PageProps) {
             });
 
             await window.open(url, "_blank");
-
-        } catch (error : any) {
-            // Swal.fire({
-            //     icon: "warning",
-            //     title: "Warning",
-            //     text: error.message,
-            // });
-
+        } catch (error: any) {
             await Toast.fire({
                 icon: "error",
                 title: "Error",
                 text: error.message,
-              })
+            });
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -574,18 +484,12 @@ export default function Index({ title, auth, flash }: PageProps) {
             if (transactions) {
                 setHoldTransactions(transactions);
             }
-        } catch (error : any) {
-            // Swal.fire({
-            //     icon: "warning",
-            //     title: "Warning",
-            //     text: error.message,
-            // });
-
+        } catch (error: any) {
             await Toast.fire({
                 icon: "error",
                 title: "Error",
                 text: error.message,
-              })
+            });
         }
     };
 
@@ -751,15 +655,18 @@ export default function Index({ title, auth, flash }: PageProps) {
                 <Modal
                     show={openModalTableHoldTransaction}
                     onClose={() => setOpenModalTableHoldTransaction(false)}
-                    className={`fixed inset-0 z-50 overflow-y-auto ${openModalTableHoldTransaction ? 'animate-fadeIn' : 'animate-fadeOut'}`}
-                    size="xlg"
+                    className={`fixed inset-0 z-50 overflow-y-auto ${
+                        openModalTableHoldTransaction
+                            ? "animate-fadeIn"
+                            : "animate-fadeOut"
+                    }`}
                 >
                     <Modal.Header>
                         <p>List Hold Transaction</p>
                     </Modal.Header>
                     <Modal.Body>
                         <div className="flex justify-end">
-                        <FloatingLabel
+                            <FloatingLabel
                                 variant="outlined"
                                 onChange={handleSearchChange}
                                 label="search..."
@@ -883,50 +790,55 @@ export default function Index({ title, auth, flash }: PageProps) {
                                             </Table.Cell>
                                             <Table.Cell>
                                                 <TextInput
-                                                type="number"
-                                                value={detail.price}
-                                                onChange={async(e) => {
-                                                    const updatedTransactionDetails =
-                                                    [
-                                                        ...(transaction.transaction_details || [])
-                                                    ];
+                                                    type="number"
+                                                    value={detail.price}
+                                                    onChange={async (e) => {
+                                                        const updatedTransactionDetails =
+                                                            [
+                                                                ...(transaction.transaction_details ||
+                                                                    []),
+                                                            ];
 
-                                                    updatedTransactionDetails[index].price = parseInt(e.target.value);
-                                                    updatedTransactionDetails[
-                                                        index
-                                                    ].total_price =
-                                                        calculateTotalPrice(
-                                                            updatedTransactionDetails[
-                                                                index
-                                                            ].price,
-                                                            updatedTransactionDetails[
-                                                                index
-                                                            ].quantity,
-                                                            updatedTransactionDetails[
-                                                                index
-                                                            ].discount
+                                                        updatedTransactionDetails[
+                                                            index
+                                                        ].price = parseInt(
+                                                            e.target.value
                                                         );
-                                                    setTransactions(
-                                                        (
-                                                            prevTransactions
-                                                        ) =>
-                                                            prevTransactions.map(
-                                                                (t) => {
-                                                                    if (
-                                                                        t.id ===
-                                                                        transaction.id
-                                                                    ) {
-                                                                        return {
-                                                                            ...t,
-                                                                            products:
-                                                                                updatedTransactionDetails,
-                                                                        };
+                                                        updatedTransactionDetails[
+                                                            index
+                                                        ].total_price =
+                                                            calculateTotalPrice(
+                                                                updatedTransactionDetails[
+                                                                    index
+                                                                ].price,
+                                                                updatedTransactionDetails[
+                                                                    index
+                                                                ].quantity,
+                                                                updatedTransactionDetails[
+                                                                    index
+                                                                ].discount
+                                                            );
+                                                        setTransactions(
+                                                            (
+                                                                prevTransactions
+                                                            ) =>
+                                                                prevTransactions.map(
+                                                                    (t) => {
+                                                                        if (
+                                                                            t.id ===
+                                                                            transaction.id
+                                                                        ) {
+                                                                            return {
+                                                                                ...t,
+                                                                                products:
+                                                                                    updatedTransactionDetails,
+                                                                            };
+                                                                        }
+                                                                        return t;
                                                                     }
-                                                                    return t;
-                                                                }
-                                                            )
-                                                    );
-                                                }}
+                                                                )
+                                                        );
+                                                    }}
                                                 />
                                             </Table.Cell>
                                             <Table.Cell>
@@ -1078,7 +990,9 @@ export default function Index({ title, auth, flash }: PageProps) {
                                 <Button
                                     color="red"
                                     className="ms-3"
-                                    onClick={() => holdTransaction(transactionId, 'hold')}
+                                    onClick={() =>
+                                        holdTransaction(transactionId, "hold")
+                                    }
                                 >
                                     Hold
                                 </Button>

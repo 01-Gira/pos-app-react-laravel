@@ -1,49 +1,15 @@
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
-import {
-    HoldTransaction,
-    PageProps,
-    TransactionDetail,
-    Transaction,
-    Purchase,
-    PurchaseDetail,
-} from "@/types";
+import { HoldTransaction, PageProps, Purchase, PurchaseDetail } from "@/types";
 import { Head } from "@inertiajs/react";
 import axios from "axios";
-import {
-    Button,
-    FloatingLabel,
-    Label,
-    Modal,
-    Select,
-    Table,
-    TextInput,
-} from "flowbite-react";
+import { Button, Label, Select, Table, TextInput } from "flowbite-react";
 import { useEffect, useRef, useState } from "react";
 import { formatRupiah, Toast } from "@/utils/Utils";
 import { BeatLoader, ClipLoader } from "react-spinners";
-import { HiOutlineExclamationCircle } from "react-icons/hi";
-import DataTable, { TableColumn } from "react-data-table-component";
-import { format } from "date-fns";
-import { redirect } from "react-router-dom";
-import { stringify } from "querystring";
-import Swal from "sweetalert2";
+import { TableColumn } from "react-data-table-component";
 
 export default function Index({ title, auth, flash, suppliers }: PageProps) {
     const [purchase, setPurchase] = useState<Purchase>();
-
-    const [swalCustomClass, setSwalCustomClass] = useState({
-        popup: "!relative !transform !overflow-hidden !rounded-lg !bg-white !text-left !shadow-xl !transition-all sm:!my-8 sm:!w-full sm:!max-w-lg !p-0 !grid-cols-none",
-        icon: "!m-0 !mx-auto !flex !h-12 !w-12 !flex-shrink-0 !items-center !justify-center !rounded-full !border-0 !bg-red-100 sm:!h-10 sm:!w-10 !mt-5 sm!mt-6 sm:!ml-6 !col-start-1 !col-end-3 sm:!col-end-2",
-        title: "!p-0 !pt-3 !text-center sm:!text-left !text-base !font-semibold !leading-6 !text-gray-900 !pl-4 !pr-4 sm:!pr-6 sm:!pl-0 sm:!pt-6 sm:!ml-4 !col-start-1 sm:!col-start-2 !col-end-3",
-        htmlContainer:
-            "!mt-2 sm:!mt-0 !m-0 !text-center sm:!text-left !text-sm !text-gray-500 !pl-4 sm:!pl-0 !pr-4 !pb-4 sm:!pr-6 sm:!pb-4 sm:!ml-4 !col-start-1 sm:!col-start-2 !col-end-3",
-        actions:
-            "!bg-gray-50 !px-4 !py-3 sm:!flex sm:!flex-row-reverse sm:!px-6 !w-full !justify-start !mt-0 !col-start-1 !col-end-3",
-        confirmButton:
-            "inline-flex w-full justify-center rounded-md bg-cyan-700 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-cyan-800 sm:ml-3 sm:w-auto",
-        cancelButton:
-            "mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:mt-0 sm:w-auto",
-    });
 
     const barcodeInput = useRef<HTMLInputElement>(null);
 
@@ -55,45 +21,24 @@ export default function Index({ title, auth, flash, suppliers }: PageProps) {
     const selectSupplier = useRef<HTMLSelectElement>(null);
 
     const newPurchase = async () => {
+        setLoading(true);
         try {
-            setLoading(true);
-
-            if(!purchase?.supplier_id){
-                setLoading(false);
-
-                // Swal.fire({
-                //     buttonsStyling: false,
-                //     customClass: swalCustomClass,
-                //     icon: "info",
-                //     title: "Info",
-                //     text: "Please select supplier first",
-                // });
-
+            if (!purchase?.supplier_id) {
                 await Toast.fire({
                     icon: "warning",
                     title: "Warning",
                     text: "Please select supplier first",
-                  })
+                });
 
                 return;
             }
 
             if (purchaseId) {
-                setLoading(false);
-
-                // Swal.fire({
-                //     buttonsStyling: false,
-                //     customClass: swalCustomClass,
-                //     icon: "info",
-                //     title: "Info",
-                //     text: "There is a purchase in progress. You can't create a new purchase",
-                // });
-
                 await Toast.fire({
                     icon: "warning",
                     title: "Warning",
                     text: "There is a purchase in progress. You can't create a new purchase",
-                  })
+                });
 
                 return;
             }
@@ -102,7 +47,7 @@ export default function Index({ title, auth, flash, suppliers }: PageProps) {
                 route("transaction.purchase-products.new-purchase")
             );
 
-            if(res.data.indctr === 1){
+            if (res.data.indctr === 1) {
                 const purchase = res.data.purchase;
 
                 if (purchase) {
@@ -126,48 +71,38 @@ export default function Index({ title, auth, flash, suppliers }: PageProps) {
                             total_payment: 0,
                             purchase_date: new Date(),
                             created_at: new Date(),
-                            updated_at: new Date()
+                            updated_at: new Date(),
                         };
                     });
                 }
-            }else{
-                // Swal.fire({
-                //     buttonsStyling: false,
-                //     customClass: swalCustomClass,
-                //     icon: "info",
-                //     title: "Info",
-                //     text: res.data.message,
-                // });
-
+            } else {
                 await Toast.fire({
                     icon: "warning",
                     title: "Warning",
                     text: res.data.message,
-                  })
+                });
             }
-
-            setLoading(false);
-        } catch (error : any) {
-            setLoading(false);
-
+        } catch (error: any) {
             await Toast.fire({
                 icon: "error",
                 title: "Error",
                 text: error.message,
-              })
+            });
+        } finally {
+            setLoading(false);
         }
     };
 
     const getDataProduct = async (barcode: string) => {
+        setLoading(true);
         try {
-            setLoading(true);
             const res = await axios.get(
                 route("master.products.get-data-barcode", barcode)
             );
 
             const product = res.data.product;
 
-            if(res.data.indctr === 1){
+            if (res.data.indctr === 1) {
                 if (product) {
                     setPurchase((prevPurchase) => {
                         if (!prevPurchase) return prevPurchase;
@@ -188,7 +123,8 @@ export default function Index({ title, auth, flash, suppliers }: PageProps) {
                             updatedPurchaseDetails[
                                 existingProductIndex
                             ].total_price = calculateTotalPrice(
-                                updatedPurchaseDetails[existingProductIndex].price,
+                                updatedPurchaseDetails[existingProductIndex]
+                                    .price,
                                 updatedPurchaseDetails[existingProductIndex]
                                     .quantity,
                                 updatedPurchaseDetails[existingProductIndex]
@@ -204,7 +140,7 @@ export default function Index({ title, auth, flash, suppliers }: PageProps) {
                             // Add new product details
                             const newPurchaseDetail: PurchaseDetail = {
                                 id: product.id,
-                                purchase_id : '',
+                                purchase_id: "",
                                 quantity: 1,
                                 discount: product.discount | 0,
                                 price: product.price,
@@ -214,8 +150,8 @@ export default function Index({ title, auth, flash, suppliers }: PageProps) {
                                     product.discount
                                 ),
                                 product: product,
-                                created_at : new Date(),
-                                updated_at : new Date(),
+                                created_at: new Date(),
+                                updated_at: new Date(),
                             };
 
                             return {
@@ -232,52 +168,43 @@ export default function Index({ title, auth, flash, suppliers }: PageProps) {
                         icon: "success",
                         title: "Success",
                         text: res.data.message,
-                      })
+                    });
                     await savePurchase();
                 }
-            }else{
+            } else {
                 await Toast.fire({
                     icon: "warning",
                     title: "Warning",
                     text: res.data.message,
-                  })
+                });
             }
-
 
             if (barcodeInput.current) {
                 barcodeInput.current.value = "";
             }
-        } catch (error : any) {
+        } catch (error: any) {
             if (barcodeInput.current) {
                 barcodeInput.current.value = "";
             }
-            setLoading(false);
-
             await Toast.fire({
                 icon: "error",
                 title: "Error",
                 text: error.message,
-              })
+            });
+        } finally {
+            setLoading(false);
         }
     };
 
     const savePurchase = async () => {
         setLoading(true);
         try {
-            if(!purchaseId){
-                // Swal.fire({
-                //     customClass: swalCustomClass,
-                //     icon: "warning",
-                //     title: "Warning",
-                //     text: "There is no purchase in progress",
-                // });
-
-
+            if (!purchaseId) {
                 await Toast.fire({
                     icon: "warning",
                     title: "Warning",
                     text: "There is no purchase in progress",
-                  })
+                });
                 return;
             }
 
@@ -288,31 +215,23 @@ export default function Index({ title, auth, flash, suppliers }: PageProps) {
                 }
             );
 
-
-
-            if(res.data.indctr === 0){
-                // Swal.fire({
-                //     icon: "warning",
-                //     title: "Warning",
-                //     text: res.data.message,
-                // });
-
+            if (res.data.indctr === 0) {
                 await Toast.fire({
                     icon: "warning",
                     title: "Warning",
                     text: res.data.message,
-                  })
+                });
             }
 
             if (barcodeInput.current) {
                 barcodeInput.current.value = "";
             }
-        } catch (error : any) {
+        } catch (error: any) {
             await Toast.fire({
                 icon: "error",
                 title: "Error",
                 text: error.message,
-              })
+            });
         } finally {
             setLoading(false);
         }
@@ -340,7 +259,6 @@ export default function Index({ title, auth, flash, suppliers }: PageProps) {
         const totalPPN = Math.round(subtotal * 0.1);
         const totalPayment = Math.round(subtotal + totalPPN);
 
-        // Pastikan bahwa hanya mengubah purchase jika ada perubahan
         if (
             purchase.subtotal !== subtotal ||
             purchase.ppn !== totalPPN ||
@@ -358,19 +276,6 @@ export default function Index({ title, auth, flash, suppliers }: PageProps) {
             });
         }
     }, [purchase]);
-
-    const columns: TableColumn<HoldTransaction>[] = [
-        {
-            name: "Uniq Code",
-            selector: (row: HoldTransaction) => row.id,
-            sortable: true,
-        },
-        {
-            name: "Supplier Name",
-            selector: (row: HoldTransaction) => row.status,
-            sortable: true,
-        },
-    ];
 
     const [supplierIdToSave, setSupplierIdToSave] = useState<string | null>(
         null
@@ -405,46 +310,26 @@ export default function Index({ title, auth, flash, suppliers }: PageProps) {
     }, [purchase]);
 
     const submitPurchase = async () => {
+        setLoading(true);
         try {
-            setLoading(true);
-            if (
-                !purchaseId &&
-                !purchase
-            ) {
-                setLoading(false);
-
-                // Swal.fire({
-                //     buttonsStyling: false,
-                //     customClass: swalCustomClass,
-                //     icon: "info",
-                //     title: "Info",
-                //     text: "There is no purchase in progress or products list is empty",
-                // });
-
+            if (!purchaseId && !purchase) {
                 await Toast.fire({
                     icon: "warning",
                     title: "Warning",
-                     text: "There is no purchase in progress or products list is empty",
-                  })
+                    text: "There is no purchase in progress or products list is empty",
+                });
                 return;
             }
 
-            if(purchase?.payment_method == '' || purchase?.payment_method == null) {
-                setLoading(false);
-
-                // Swal.fire({
-                //     buttonsStyling: false,
-                //     customClass: swalCustomClass,
-                //     icon: "info",
-                //     title: "Info",
-                //     text: "Please select payment method first!",
-                // });
-
+            if (
+                purchase?.payment_method == "" ||
+                purchase?.payment_method == null
+            ) {
                 await Toast.fire({
                     icon: "warning",
                     title: "Warning",
                     text: "Please select payment method first!",
-                  })
+                });
 
                 return;
             }
@@ -458,29 +343,21 @@ export default function Index({ title, auth, flash, suppliers }: PageProps) {
 
             if (res.data.indctr === 1) {
                 window.location.reload();
-            }else{
-                // Swal.fire({
-                //     icon: "warning",
-                //     title: "Warning",
-                //     text: res.data.message,
-                // });
-
+            } else {
                 await Toast.fire({
                     icon: "warning",
                     title: "Warning",
                     text: res.data.message,
-                  })
+                });
             }
-
-            setLoading(false);
-        } catch (error : any) {
-            setLoading(false);
-
+        } catch (error: any) {
             await Toast.fire({
                 icon: "error",
                 title: "Error",
                 text: error.message,
-              })
+            });
+        } finally {
+            setLoading(false);
         }
     };
     return (
@@ -515,7 +392,7 @@ export default function Index({ title, auth, flash, suppliers }: PageProps) {
                                     purchase_date: new Date(),
                                     created_at: new Date(),
                                     updated_at: new Date(),
-                                    supplier : null
+                                    supplier: null,
                                 });
 
                                 setSupplierIdToSave(e.target.value);
@@ -581,6 +458,7 @@ export default function Index({ title, auth, flash, suppliers }: PageProps) {
                                             <TextInput
                                                 type="number"
                                                 value={detail.quantity.toString()}
+                                                required
                                                 onChange={(e) => {
                                                     const updatedPurchaseDetails =
                                                         [
@@ -623,16 +501,22 @@ export default function Index({ title, auth, flash, suppliers }: PageProps) {
                                             />
                                         </Table.Cell>
                                         <Table.Cell>
-                                                <TextInput
+                                            <TextInput
                                                 type="number"
                                                 value={detail.price}
-                                                onChange={async(e) => {
+                                                required
+                                                onChange={async (e) => {
                                                     const updatedPurchaseDetails =
-                                                    [
-                                                        ...(purchase.purchase_details || [])
-                                                    ];
+                                                        [
+                                                            ...(purchase.purchase_details ||
+                                                                []),
+                                                        ];
 
-                                                    updatedPurchaseDetails[index].price = parseInt(e.target.value);
+                                                    updatedPurchaseDetails[
+                                                        index
+                                                    ].price = parseInt(
+                                                        e.target.value
+                                                    );
                                                     updatedPurchaseDetails[
                                                         index
                                                     ].total_price =
@@ -660,8 +544,8 @@ export default function Index({ title, auth, flash, suppliers }: PageProps) {
                                                         }
                                                     );
                                                 }}
-                                                />
-                                            </Table.Cell>
+                                            />
+                                        </Table.Cell>
                                         <Table.Cell>
                                             {loading ? (
                                                 <BeatLoader />
@@ -669,6 +553,7 @@ export default function Index({ title, auth, flash, suppliers }: PageProps) {
                                                 <TextInput
                                                     type="number"
                                                     value={detail.discount.toString()}
+                                                    required
                                                     onChange={(e) => {
                                                         const updatedPurchaseDetails =
                                                             [

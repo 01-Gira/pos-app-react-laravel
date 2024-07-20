@@ -17,7 +17,7 @@ import { usePage } from "@inertiajs/react";
 import { User } from "@/types";
 
 interface SidebarLayoutProps {
-    user: User
+    user: User;
     sidebarOpen: boolean;
     setSidebarOpen: (open: boolean) => void;
 }
@@ -38,11 +38,8 @@ export default function SidebarLayout({
             } transition-transform duration-300 ease-in-out bg-white dark:bg-gray-800 shadow-lg`}
         >
             <Sidebar aria-label="Sidebar with logo branding example">
-                <Sidebar.Logo
-                    href={route('dashboard')}
-                    img="#"
-                >
-                  {user.store?.store_name}
+                <Sidebar.Logo href={route("dashboard")} img="#">
+                    {user.store?.store_name}
                 </Sidebar.Logo>
                 <Sidebar.Items className="py-12">
                     <Sidebar.ItemGroup>
@@ -86,7 +83,9 @@ export default function SidebarLayout({
                             </Sidebar.Item>
                             <Sidebar.Item
                                 className={
-                                    route().current("transaction.purchase-products.*")
+                                    route().current(
+                                        "transaction.purchase-products.*"
+                                    )
                                         ? "bg-gray-300 text-black"
                                         : ""
                                 }
@@ -110,7 +109,9 @@ export default function SidebarLayout({
                             </Sidebar.Item> */}
                             <Sidebar.Item
                                 className={
-                                    route().current("transaction.claim-customers.*")
+                                    route().current(
+                                        "transaction.claim-customers.*"
+                                    )
                                         ? "bg-gray-300 text-black"
                                         : ""
                                 }
@@ -202,7 +203,7 @@ export default function SidebarLayout({
                             >
                                 Transactions
                             </Sidebar.Item>
-                            <Sidebar.Item
+                            {/* <Sidebar.Item
                                 className={
                                     route().current("report.products.*")
                                         ? "bg-gray-300 text-black"
@@ -213,7 +214,7 @@ export default function SidebarLayout({
                                 )}
                             >
                                 Products
-                            </Sidebar.Item>
+                            </Sidebar.Item> */}
                         </Sidebar.Collapse>
                         <Sidebar.Collapse
                             icon={HiArchive}

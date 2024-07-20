@@ -1,14 +1,23 @@
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import { PageProps, Product } from "@/types";
 import { Head, Link, router, useForm } from "@inertiajs/react";
-import { Button, Datepicker, FileInput, FloatingLabel, Label, Modal, Select, TextInput } from "flowbite-react";
+import {
+    Button,
+    Datepicker,
+    FileInput,
+    FloatingLabel,
+    Label,
+    Modal,
+    Select,
+    TextInput,
+} from "flowbite-react";
 import { ChangeEvent, useEffect, useState } from "react";
 import DataTable, { TableColumn } from "react-data-table-component";
 import { HiOutlinePlus, HiOutlineExclamationCircle } from "react-icons/hi";
 import { format } from "date-fns";
 import { ClipLoader } from "react-spinners";
 import Swal from "sweetalert2";
-import { classCustomSwal, exportExcel, exportPDF } from "@/utils/Utils";
+import { classCustomSwal, exportExcel, exportPDF, Toast } from "@/utils/Utils";
 import axios from "axios";
 import Barcode from "react-barcode";
 import withReactContent from "sweetalert2-react-content";
@@ -20,7 +29,10 @@ export default function Index({
     pagination,
     search,
     flash,
-    start_date, end_date, category, categories
+    start_date,
+    end_date,
+    category,
+    categories,
 }: PageProps) {
     const [pending, setPending] = useState(false);
     const [currentPage, setCurrentPage] = useState(pagination.current_page);
@@ -36,8 +48,8 @@ export default function Index({
             { search: searchQuery, page, category: categoryFilter },
             {
                 preserveState: true,
-                onStart:() => setPending(true),
-                onFinish:() => setPending(false)
+                onStart: () => setPending(true),
+                onFinish: () => setPending(false),
             }
         );
         setCurrentPage(page);
@@ -47,11 +59,16 @@ export default function Index({
         setRowsPerPage(newRowsPerPage);
         router.get(
             route("master.products.index"),
-            { search: searchQuery, page, per_page: newRowsPerPage, category: categoryFilter },
+            {
+                search: searchQuery,
+                page,
+                per_page: newRowsPerPage,
+                category: categoryFilter,
+            },
             {
                 preserveState: true,
-                onStart:() => setPending(true),
-                onFinish:() => setPending(false)
+                onStart: () => setPending(true),
+                onFinish: () => setPending(false),
             }
         );
         setCurrentPage(page);
@@ -64,8 +81,8 @@ export default function Index({
             { search: event.target.value, page: 1, category: categoryFilter },
             {
                 preserveState: true,
-                onStart:() => setPending(true),
-                onFinish:() => setPending(false)
+                onStart: () => setPending(true),
+                onFinish: () => setPending(false),
             }
         );
     };
@@ -107,14 +124,13 @@ export default function Index({
         router.get(
             route("master.products.index"),
             { search: searchQuery, page: 1, category: event.target.value },
-              {
+            {
                 preserveState: true,
-                onStart:() => setPending(true),
-                onFinish:() => setPending(false)
+                onStart: () => setPending(true),
+                onFinish: () => setPending(false),
             }
         );
     };
-
 
     const [productId, setProductId] = useState<string | null>(null);
 
@@ -130,7 +146,7 @@ export default function Index({
             confirmButtonText: "Yes, delete it!",
             confirmButtonColor: "#3085d6",
             showLoaderOnConfirm: true,
-            preConfirm : async () => {
+            preConfirm: async () => {
                 try {
                     await destroy(
                         route("master.products.destroy", {
@@ -147,10 +163,7 @@ export default function Index({
                         Request failed: ${error}
                       `);
                 }
-            }
-        }).then((result) => {
-            if (result.isConfirmed) {
-            }
+            },
         });
     };
 
@@ -179,7 +192,7 @@ export default function Index({
         setModalDiscount(true);
     };
 
-    const applyDiscount = async() => {
+    const applyDiscount = async () => {
         if (productId) {
             await post(route("master.products.add-discount", productId), {
                 onFinish: () => {
@@ -192,27 +205,30 @@ export default function Index({
     const printBarcode = async (id: string) => {
         withReactContent(Swal).fire({
             title: <i>How many qrcode you want to generate?</i>,
-            input: 'number',
+            input: "number",
             showCancelButton: true,
             showConfirmButton: true,
             showLoaderOnConfirm: true,
             preConfirm: async () => {
-              const input = Swal.getInput()?.value;
-              console.log();
-              if(input == ''){
-                Swal.fire({
-                    icon: "warning",
-                    title: `Input can not be empty`,
-                    confirmButtonText: 'OK'
-                });
-              }else{
-                const url = route("master.products.print-barcode", {product: id, value: input});
+                const input = Swal.getInput()?.value;
+                console.log();
+                if (input == "") {
+                    await Toast.fire({
+                        icon: "warning",
+                        title: "Warning",
+                        text: `Input can not be empty`,
+                    });
+                } else {
+                    const url = route("master.products.print-barcode", {
+                        product: id,
+                        value: input,
+                    });
 
-                await window.open(url, "_blank");
-              }
+                    await window.open(url, "_blank");
+                }
             },
-          })
-    }
+        });
+    };
 
     const columns: TableColumn<Product>[] = [
         {
@@ -220,7 +236,7 @@ export default function Index({
             // cell: (row: Product) => <Barcode value={row.barcode} />,
             cell: (row: Product) => row.barcode,
             sortable: true,
-            width: '15%'
+            width: "15%",
         },
         {
             name: "Product Name",
@@ -247,7 +263,8 @@ export default function Index({
         },
         {
             name: "Discount",
-            selector: (row: Product) => row.discount ? `${row.discount.discount}%` : '0%',
+            selector: (row: Product) =>
+                row.discount ? `${row.discount.discount}%` : "0%",
             sortable: true,
             center: true,
         },
@@ -262,12 +279,12 @@ export default function Index({
             selector: (row: Product) =>
                 format(new Date(row.created_at), "yyyy-MM-dd"),
             sortable: true,
-            width: '10%',
+            width: "10%",
             center: true,
         },
         {
             name: "Action",
-            width: '30%',
+            width: "30%",
             center: true,
             cell: (row: Product) => (
                 <div className="flex space-x-4">
@@ -290,9 +307,7 @@ export default function Index({
                     </button>
                     <button
                         onClick={() => {
-                            printBarcode(
-                                row.id,
-                            );
+                            printBarcode(row.id);
                         }}
                         className="font-medium text-green-500 hover:underline dark:text-red-300"
                     >
@@ -323,25 +338,28 @@ export default function Index({
                 confirmButtonText: "Yes",
                 confirmButtonColor: "#3085d6",
                 showLoaderOnConfirm: true,
-                preConfirm : async () => {
+                preConfirm: async () => {
                     try {
                         const formData = new FormData();
-                        formData.append('file', file);
-                        const res = await axios.post(route('master.products.import-data'), formData, {
-                            headers: {
-                                'Content-Type': 'multipart/form-data'
+                        formData.append("file", file);
+                        const res = await axios.post(
+                            route("master.products.import-data"),
+                            formData,
+                            {
+                                headers: {
+                                    "Content-Type": "multipart/form-data",
+                                },
                             }
-                        })
+                        );
 
-                        e.target.value = '';
+                        e.target.value = "";
                         return res.data.message;
                     } catch (error) {
                         Swal.showValidationMessage(`
                             Request failed: ${error}
                           `);
-
                     }
-                }
+                },
             }).then((result) => {
                 if (result.isConfirmed) {
                     Swal.fire({
@@ -349,23 +367,19 @@ export default function Index({
                         customClass: classCustomSwal,
                         icon: "question",
                         title: `${result.value}`,
-                        confirmButtonText: 'OK'
+                        confirmButtonText: "OK",
                     }).then((result) => {
-                      if (result.isConfirmed) {
-                        setPending(true);
-                        window.location.reload();
-                      }
+                        if (result.isConfirmed) {
+                            setPending(true);
+                            window.location.reload();
+                        }
                     });
                 }
             });
         }
     };
 
-
-    const handleExport = () => {
-
-    }
-
+    const handleExport = () => {};
 
     return (
         <AuthenticatedLayout
@@ -409,9 +423,12 @@ export default function Index({
                             required
                         >
                             <option value="">Select</option>
-                            {categories && categories.map((value) => (
-                                <option key={value.id} value={value.id}>{value.category_name}</option>
-                            ))}
+                            {categories &&
+                                categories.map((value) => (
+                                    <option key={value.id} value={value.id}>
+                                        {value.category_name}
+                                    </option>
+                                ))}
                         </Select>
                     </div>
                 </div>
@@ -420,25 +437,37 @@ export default function Index({
                         <div className="mb-2 block">
                             <Label htmlFor="btn-add" value="Add Product" />
                         </div>
-                            <Button
-                                href={route("master.products.create")}
-                                className="w-40 hover:bg-cyan-800"
-                            >
-                                <HiOutlinePlus className="mr-2 h-5 w-5" />
-                                Add Data
-                            </Button>
-                        </div>
+                        <Button
+                            href={route("master.products.create")}
+                            className="w-40 hover:bg-cyan-800"
+                        >
+                            <HiOutlinePlus className="mr-2 h-5 w-5" />
+                            Add Data
+                        </Button>
+                    </div>
                     <div>
                         <div className="mb-2 block">
-                            <Label htmlFor="file-upload" value="Import Data From Excel" />
+                            <Label
+                                htmlFor="file-upload"
+                                value="Import Data From Excel"
+                            />
                         </div>
-                        <FileInput id="file-upload" onChange={handleFileChange} />
+                        <FileInput
+                            id="file-upload"
+                            onChange={handleFileChange}
+                        />
                     </div>
                 </div>
                 <div className="flex justify-between items-center mt-4">
                     <div className="flex space-x-4">
                         <Button.Group>
-                            <Button href={route('master.exports.products.export-data', 'xlsx')} color="green">
+                            <Button
+                                href={route(
+                                    "master.exports.products.export-data",
+                                    "xlsx"
+                                )}
+                                color="green"
+                            >
                                 Excel
                             </Button>
                         </Button.Group>
@@ -452,7 +481,6 @@ export default function Index({
                         />
                     </div>
                 </div>
-
 
                 <Modal
                     show={openModalDiscount}

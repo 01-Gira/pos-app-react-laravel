@@ -22,7 +22,7 @@ class ProductFactory extends Factory
         return [
             'barcode' => $barcode,
             'product_name' => $this->faker->word,
-            'category_id' => Category::factory(),
+            'category_id' => Category::inRandomOrder()->first(),
             'type' => $this->faker->randomElement(['pcs', 'pack']),
             'stock' => $this->faker->numberBetween(1, 100),
             'price' => $this->faker->numberBetween(1000, 100000),

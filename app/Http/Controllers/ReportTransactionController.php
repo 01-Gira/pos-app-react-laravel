@@ -41,8 +41,8 @@ class ReportTransactionController extends Controller
     {
         $filters = [
             'search' => $request->input('search'),
-            'startDate' => $request->input('start_date'),
-            'endDate' => $request->input('end_date'),
+            'start_date' => $request->input('start_date'),
+            'end_date' => $request->input('end_date'),
             'status' => $request->input('status'),
             'payment_method' => $request->input('payment_method'),
             'category' => $request->input('category'),
@@ -63,8 +63,8 @@ class ReportTransactionController extends Controller
                 'total_items' => $transactions->total(),
                 'per_page' => $transactions->perPage(),
             ],
-            'start_date' => $filters['startDate'],
-            'end_date' => $filters['endDate'],
+            'start_date' => $filters['start_date'],
+            'end_date' => $filters['end_date'],
             'search' => $filters['search'],
             'status' => $filters['status'],
             'payment_method' => $filters['payment_method'],
@@ -76,8 +76,8 @@ class ReportTransactionController extends Controller
     {
         $filters = [
             'search' => $request->input('search'),
-            'startDate' => $request->input('start_date'),
-            'endDate' => $request->input('end_date'),
+            'start_date' => $request->input('start_date'),
+            'end_date' => $request->input('end_date'),
             'status' => $request->input('status'),
             'payment_method' => $request->input('payment_method'),
             'category' => $request->input('category'),
@@ -97,8 +97,8 @@ class ReportTransactionController extends Controller
                 'total_items' => $purchases->total(),
                 'per_page' => $purchases->perPage(),
             ],
-            'start_date' => $filters['startDate'],
-            'end_date' => $filters['endDate'],
+            'start_date' => $filters['start_date'],
+            'end_date' => $filters['end_date'],
             'search' => $filters['search'],
             'status' => $filters['status'],
             'payment_method' => $filters['payment_method'],
@@ -167,6 +167,7 @@ class ReportTransactionController extends Controller
             }
 
             return back()->with([
+                'title' => 'Success',
                 'type_message' => 'success',
                 'message' => 'Process export is on process, you will be notified when is ready to download'
             ]);
@@ -174,8 +175,9 @@ class ReportTransactionController extends Controller
         } catch (\Throwable $th) {
             // throw $th;
             return to_route('report.transactions.index')->with([
-                'type_message' => 'warning',
-                'message' => 'Oops Something Went Wrong! Message : ' . $th
+                'title' => 'Error',
+                'type_message' => 'error',
+                'message' => 'Oops Something Went Wrong! Message : ' . $th->getMessage()
             ]);
         }
     }

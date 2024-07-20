@@ -17,7 +17,13 @@ import {
     Table,
     TextInput,
 } from "flowbite-react";
-import { FormEventHandler, InputHTMLAttributes, useEffect, useRef, useState } from "react";
+import {
+    FormEventHandler,
+    InputHTMLAttributes,
+    useEffect,
+    useRef,
+    useState,
+} from "react";
 import DataTable, { TableColumn } from "react-data-table-component";
 import { HiOutlinePlus } from "react-icons/hi";
 import { ClipLoader } from "react-spinners";
@@ -31,14 +37,18 @@ export default function Index({
     search,
     flash,
     start_date,
-    end_date
+    end_date,
 }: PageProps) {
     const [pending, setPending] = useState(false);
     const [currentPage, setCurrentPage] = useState(pagination.current_page);
     const [searchQuery, setSearchQuery] = useState(search || "");
     const [rowsPerPage, setRowsPerPage] = useState(pagination.per_page);
-    const [startDate, setStartDate] = useState(format(new Date(start_date), "yyyy-MM-dd"));
-    const [endDate, setEndDate] = useState(format(new Date(end_date), "yyyy-MM-dd"));
+    const [startDate, setStartDate] = useState(
+        format(new Date(start_date), "yyyy-MM-dd")
+    );
+    const [endDate, setEndDate] = useState(
+        format(new Date(end_date), "yyyy-MM-dd")
+    );
     const [addModal, setAddModal] = useState(false);
     const [editModal, setEditModal] = useState(false);
 
@@ -100,11 +110,16 @@ export default function Index({
             setStartDate(formattedDate);
             router.get(
                 route("master.products.index"),
-                { search: searchQuery, page: 1, start_date: formattedDate, end_date: endDate },
+                {
+                    search: searchQuery,
+                    page: 1,
+                    start_date: formattedDate,
+                    end_date: endDate,
+                },
                 {
                     preserveState: true,
-                    onStart:() => setPending(true),
-                    onFinish:() => setPending(false)
+                    onStart: () => setPending(true),
+                    onFinish: () => setPending(false),
                 }
             );
         }
@@ -116,11 +131,16 @@ export default function Index({
             setEndDate(formattedDate);
             router.get(
                 route("master.products.index"),
-                { search: searchQuery, page: 1, start_date: startDate, end_date: formattedDate },
+                {
+                    search: searchQuery,
+                    page: 1,
+                    start_date: startDate,
+                    end_date: formattedDate,
+                },
                 {
                     preserveState: true,
-                    onStart:() => setPending(true),
-                    onFinish:() => setPending(false)
+                    onStart: () => setPending(true),
+                    onFinish: () => setPending(false),
                 }
             );
         }
@@ -134,62 +154,64 @@ export default function Index({
         });
     };
 
-    const { data, setData, delete: destroy, put, post, processing, errors, reset } = useForm({
-        id: '',
+    const {
+        data,
+        setData,
+        delete: destroy,
+        put,
+        post,
+        processing,
+        errors,
+        reset,
+    } = useForm({
+        id: "",
         discount: 0,
-        product_id : '',
-        barcode: '',
-        product_name: ''
+        product_id: "",
+        barcode: "",
+        product_name: "",
     });
-
 
     const confirmDataDeletion = (id: string) => {
         Swal.fire({
             buttonsStyling: false,
             customClass: swalCustomClass,
+            showCancelButton: true,
+            confirmButtonText: "Yes, delete it!",
             title: "Delete",
             text: "Are you sure want to delete data?",
             icon: "warning",
         }).then((willDelete) => {
-            if (willDelete) {
+            if (willDelete.isConfirmed) {
                 deleteData(id);
-            } else {
-                Swal.fire({
-                    buttonsStyling: false,
-                    customClass: swalCustomClass,
-                    icon: "info",
-                    title: "info",
-                    text: "Your data is safe!",
-                });
             }
         });
     };
 
-    const storeData : FormEventHandler =  (e) => {
+    const storeData: FormEventHandler = (e) => {
         e.preventDefault();
-        post(route('master.discounts.index'), {
-            onFinish : () => setAddModal(false),
-            onError : () => inputDiscount.current?.focus()
+        post(route("master.discounts.index"), {
+            onFinish: () => setAddModal(false),
+            onError: () => inputDiscount.current?.focus(),
         });
-    }
+    };
 
-    const editData = async(id: string, discount: number) => {
+    const editData = async (id: string, discount: number) => {
         setData((previousData) => ({
             ...previousData,
             id: id,
-            discount: discount
+            discount: discount,
         }));
         setEditModal(true);
-    }
+    };
 
-    const updateDiscount = async() => {
-        await put(route('master.discounts.update', data.id), {
+    const updateDiscount = async () => {
+        await put(route("master.discounts.update", data.id), {
             onSuccess: () => {
                 setEditModal(false);
                 reset();
-            }
-        })
-    }
+            },
+        });
+    };
 
     useEffect(() => {
         if (data.barcode.length > 0) {
@@ -198,18 +220,19 @@ export default function Index({
     }, [data.barcode]);
 
     const getDataProduct = async (barcode: string) => {
-        const res = await axios.get(route('master.products.get-data-barcode', barcode));
+        const res = await axios.get(
+            route("master.products.get-data-barcode", barcode)
+        );
         const product = res.data.product;
 
-        if(product){
+        if (product) {
             setData((prevData) => ({
                 ...prevData,
                 product_id: product.id,
                 product_name: product.product_name,
             }));
-
         }
-    }
+    };
 
     const columns: TableColumn<Discount>[] = [
         {
@@ -272,13 +295,12 @@ export default function Index({
 
                 <div className="grid grid-cols-2 gap-4 mt-5 mb-5">
                     <div>
-                        <Label
-                            htmlFor="start_date"
-                            value="Start Date"
-                        />
+                        <Label htmlFor="start_date" value="Start Date" />
                         <Datepicker
                             id="start_date"
-                            onSelectedDateChanged={date => onStartDateChange(date)}
+                            onSelectedDateChanged={(date) =>
+                                onStartDateChange(date)
+                            }
                             value={startDate}
                         />
                     </div>
@@ -286,7 +308,9 @@ export default function Index({
                         <Label htmlFor="end_date" value="End Date" />
                         <Datepicker
                             id="end_date"
-                            onSelectedDateChanged={date => onEndDateChange(date)}
+                            onSelectedDateChanged={(date) =>
+                                onEndDateChange(date)
+                            }
                             value={endDate}
                         />
                     </div>
@@ -304,7 +328,7 @@ export default function Index({
                             <HiOutlinePlus className="mr-2 h-5 w-5" />
                             Add Data
                         </Button>
-                        </div>
+                    </div>
                 </div>
                 <div className="flex justify-end">
                     <FloatingLabel
@@ -333,117 +357,100 @@ export default function Index({
                 </div>
             </div>
 
-            <Modal
-                size='xl'
-                show={addModal}
-                onClose={() => setAddModal(false)}
-            >
+            <Modal size="xl" show={addModal} onClose={() => setAddModal(false)}>
                 <Modal.Header>Add Discount</Modal.Header>
                 <form onSubmit={storeData}>
-                <Modal.Body>
-                    <div className="grid grid-cols-1 gap-4 mb-5">
-                        <Label
-                            htmlFor="barcode"
-                            value="Barcode"
-                        />
-                        <TextInput
-                            id="barcode"
-                            type="text"
-                            value={data.barcode}
-                            onChange={(e) => setData("barcode", e.target.value)}
-                        />
-                        <InputError
+                    <Modal.Body>
+                        <div className="grid grid-cols-1 gap-4 mb-5">
+                            <Label htmlFor="barcode" value="Barcode" />
+                            <TextInput
+                                id="barcode"
+                                type="text"
+                                value={data.barcode}
+                                onChange={(e) =>
+                                    setData("barcode", e.target.value)
+                                }
+                            />
+                            <InputError
                                 message={errors.barcode}
                                 className="mt-2"
                             />
-                    </div>
-                    <div className="grid grid-cols-1 gap-4 mb-5">
-                        <Label
-                            htmlFor="product_name"
-                            value="Product Name"
-                        />
-                        <TextInput
-                            id="product_name"
-                            readOnly
-                            type="text"
-                            value={data.product_name}
-                        />
-                        <InputError
+                        </div>
+                        <div className="grid grid-cols-1 gap-4 mb-5">
+                            <Label
+                                htmlFor="product_name"
+                                value="Product Name"
+                            />
+                            <TextInput
+                                id="product_name"
+                                readOnly
+                                type="text"
+                                value={data.product_name}
+                            />
+                            <InputError
                                 message={errors.product_name}
                                 className="mt-2"
                             />
-                    </div>
-                    <div className="grid grid-cols-1 gap-4 mb-5">
-                        <Label
-                            htmlFor="discount"
-                            value="Discount Percentage"
-                        />
-                        <TextInput
-                            id="discount"
-                            type="number"
-                            value={data.discount}
-                            ref={inputDiscount}
-                            onChange={(e) =>
-                                setData(
-                                    "discount",
-                                    parseInt(e.target.value)
-                                )
-                            }
-                            min={0}
-                            max={100}
-                        />
-                        <InputError
+                        </div>
+                        <div className="grid grid-cols-1 gap-4 mb-5">
+                            <Label
+                                htmlFor="discount"
+                                value="Discount Percentage"
+                            />
+                            <TextInput
+                                id="discount"
+                                type="number"
+                                value={data.discount}
+                                ref={inputDiscount}
+                                onChange={(e) =>
+                                    setData(
+                                        "discount",
+                                        parseInt(e.target.value)
+                                    )
+                                }
+                                min={0}
+                                max={100}
+                            />
+                            <InputError
                                 message={errors.discount}
                                 className="mt-2"
                             />
-                    </div>
-                </Modal.Body>
-                <Modal.Footer>
-                    <Button type="submit" disabled={processing}>
-                        {processing ? (
-                            <ClipLoader size="20" />
-                        ) : (
-                            "Apply Discount"
-                        )}
-                    </Button>
-                    <Button
-                        color="gray"
-                        onClick={() => setAddModal(false)}
-                    >
-                        Cancel
-                    </Button>
-                </Modal.Footer>
+                        </div>
+                    </Modal.Body>
+                    <Modal.Footer>
+                        <Button type="submit" disabled={processing}>
+                            {processing ? (
+                                <ClipLoader size="20" />
+                            ) : (
+                                "Apply Discount"
+                            )}
+                        </Button>
+                        <Button color="gray" onClick={() => setAddModal(false)}>
+                            Cancel
+                        </Button>
+                    </Modal.Footer>
                 </form>
             </Modal>
 
-            <Modal
-                show={editModal}
-                onClose={() => setEditModal(false)}
-            >
+            <Modal show={editModal} onClose={() => setEditModal(false)}>
                 <Modal.Header>Edit Discount</Modal.Header>
                 <Modal.Body>
                     <div className="space-y-6">
-                        <Label
-                            htmlFor="discount"
-                            value="Discount Percentage"
-                        />
+                        <Label htmlFor="discount" value="Discount Percentage" />
                         <TextInput
                             id="discount"
                             type="number"
                             value={data.discount}
                             onChange={(e) =>
-                                setData(
-                                    "discount",
-                                    parseInt(e.target.value)
-                                )
+                                setData("discount", parseInt(e.target.value))
                             }
                             min={0}
                             max={100}
                         />
                         <InputError
-                                message={errors.discount}
-                                className="mt-2"
-                            />
+                            message={errors.discount}
+                            className="mt-2"
+                        />
                     </div>
                 </Modal.Body>
                 <Modal.Footer>
@@ -454,10 +461,7 @@ export default function Index({
                             "Apply Discount"
                         )}
                     </Button>
-                    <Button
-                        color="gray"
-                        onClick={() => setEditModal(false)}
-                    >
+                    <Button color="gray" onClick={() => setEditModal(false)}>
                         Cancel
                     </Button>
                 </Modal.Footer>

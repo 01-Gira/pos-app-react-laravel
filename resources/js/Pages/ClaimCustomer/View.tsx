@@ -1,80 +1,99 @@
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import { Category, PageProps, Product, TransactionDetail } from "@/types";
-import { Button, FileInput, FloatingLabel, Label, Modal, Select, Textarea, TextInput } from "flowbite-react";
+import {
+    Button,
+    FileInput,
+    FloatingLabel,
+    Label,
+    Modal,
+    Select,
+    Textarea,
+    TextInput,
+} from "flowbite-react";
 import { Head, useForm } from "@inertiajs/react";
-import { FormEventHandler, useState, useEffect, useRef, ChangeEvent } from "react";
+import {
+    FormEventHandler,
+    useState,
+    useEffect,
+    useRef,
+    ChangeEvent,
+} from "react";
 import axios from "axios";
 import InputError from "@/Components/InputError";
 import { CircleLoader, ClipLoader } from "react-spinners";
 import Swal from "sweetalert2";
 import DataTable, { TableColumn } from "react-data-table-component";
 import { format } from "date-fns";
-import { classCustomSwal, formatRupiah } from "@/utils/Utils";
+import { classCustomSwal, formatRupiah, Toast } from "@/utils/Utils";
 import withReactContent from "sweetalert2-react-content";
 
 export default function View({ title, auth, flash, claimcustomer }: PageProps) {
     const { data, setData, post, put, processing, errors } = useForm({
-        id : claimcustomer.id,
+        id: claimcustomer.id,
         transaction_id: claimcustomer.transaction?.id,
         product_id: claimcustomer.product?.id,
-        product_name : claimcustomer.product?.product_name,
+        product_name: claimcustomer.product?.product_name,
         description: claimcustomer.description,
         quantity: claimcustomer.quantity,
-        status : claimcustomer.status
+        status: "",
     });
 
-    const setUpdateStatus = async(status : string) => {
-        await setData('status', status);
+    const setUpdateStatus = async (status: string) => {
+        await setData("status", status);
+        if (data.status != "") {
+            await withReactContent(Swal).fire({
+                title: <i>Enter password to access this view</i>,
+                input: "password",
+                showCancelButton: true,
+                showConfirmButton: true,
+                showLoaderOnConfirm: true,
+                preConfirm: async () => {
+                    const input = Swal.getInput()?.value;
 
-        console.log("Updated status:", data.status);
-        await withReactContent(Swal).fire({
-            title: <i>Enter password to access this view</i>,
-            input: 'password',
-            showCancelButton: true,
-            showConfirmButton: true,
-            showLoaderOnConfirm: true,
-            preConfirm: async () => {
-                const input = Swal.getInput()?.value;
-
-
-                if (input === '') {
-                    Swal.fire({
-                        icon: "warning",
-                        title: `Input cannot be empty`,
-                        confirmButtonText: 'OK'
-                    });
-                    return;
-                }
-
-                try {
-                    const res = await axios.get(route('check-password'), { params : {
-                        password: input
-                    }});
-
-                    if(res.data.indctr === 1){
-                        const claimCustomerId = data.id;
-
-                        if (!claimCustomerId) {
-                            throw new Error('Claim customer ID is missing');
-                        }
-
-                        await put(route('transaction.claim-customers.update', { claim_customer: claimCustomerId }));
-
-                    }else{
-                        Swal.fire({
+                    if (input === "") {
+                        await Toast.fire({
                             icon: "warning",
-                            title: res.data.message,
-                            confirmButtonText: 'OK'
+                            title: "Warning",
+                            text: `Input can not be empty`,
                         });
+                        return;
                     }
-                } catch (error : any) {
-                    Swal.showValidationMessage(`
-                        Request failed: ${error}
-                    `);
-                }
-            },
-        })
-    }
+
+                    try {
+                        const res = await axios.get(route("check-password"), {
+                            params: {
+                                password: input,
+                            },
+                        });
+
+                        if (res.data.indctr === 1) {
+                            const claimCustomerId = data.id;
+
+                            if (!claimCustomerId) {
+                                throw new Error("Claim customer ID is missing");
+                            }
+
+                            await put(
+                                route("transaction.claim-customers.update", {
+                                    claim_customer: claimCustomerId,
+                                })
+                            );
+                        } else {
+                            await Toast.fire({
+                                icon: "warning",
+                                title: "Warning",
+                                text: res.data.message,
+                            });
+                        }
+                    } catch (error: any) {
+                        Swal.showValidationMessage(`
+                            Request failed: ${error}
+                        `);
+                    }
+                },
+            });
+        }
+    };
 
     return (
         <AuthenticatedLayout
@@ -92,35 +111,40 @@ export default function View({ title, auth, flash, claimcustomer }: PageProps) {
                 <div className="mt-5 grid grid-cols-12">
                     <div className="col-span-12 mt-5">
                         <div>
-                            <Label htmlFor="transaction_id" value="Transcation ID" />
+                            <Label
+                                htmlFor="transaction_id"
+                                value="Transcation ID"
+                            />
                             <TextInput
                                 id="transaction_id"
                                 value={data.transaction_id}
-                                onChange={(e) => setData("transaction_id", e.target.value)}
+                                onChange={(e) =>
+                                    setData("transaction_id", e.target.value)
+                                }
                                 readOnly
                             />
-                            <InputError message={errors.transaction_id} className="mt-2" />
+                            <InputError
+                                message={errors.transaction_id}
+                                className="mt-2"
+                            />
                         </div>
                     </div>
                     <div className="col-span-12 mt-5 grid grid-cols-12 gap-4">
                         <div className="col-span-6">
-                                <Label
-                                    htmlFor="product_id"
-                                    value="Product ID"
-                                />
-                                <TextInput
-                                    id="product_id"
-                                    value={data.product_id}
-                                    readOnly
-                                    onChange={(e) =>
-                                        setData("product_id", e.target.value)
-                                    }
-                                    required
-                                />
-                                <InputError
-                                    message={errors.product_id}
-                                    className="mt-2"
-                                />
+                            <Label htmlFor="product_id" value="Product ID" />
+                            <TextInput
+                                id="product_id"
+                                value={data.product_id}
+                                readOnly
+                                onChange={(e) =>
+                                    setData("product_id", e.target.value)
+                                }
+                                required
+                            />
+                            <InputError
+                                message={errors.product_id}
+                                className="mt-2"
+                            />
                         </div>
                         <div className="col-span-6">
                             <Label htmlFor="quantity" value="Quantity" />
@@ -137,11 +161,13 @@ export default function View({ title, auth, flash, claimcustomer }: PageProps) {
                         </div>
                     </div>
                     <div className="col-span-12 mt-5">
-                        <Label htmlFor="description" value="Description"/>
+                        <Label htmlFor="description" value="Description" />
                         <Textarea
                             id="description"
                             value={data.description}
-                            onChange={(e) => setData("description", e.target.value)}
+                            onChange={(e) =>
+                                setData("description", e.target.value)
+                            }
                             required
                         ></Textarea>
                     </div>
@@ -155,14 +181,14 @@ export default function View({ title, auth, flash, claimcustomer }: PageProps) {
                         >
                             Back
                         </Button>
-                        {claimcustomer.status === 'on_process' && (
+                        {claimcustomer.status === "on_process" && (
                             <>
                                 <Button
                                     color="red"
                                     type="button" // Gunakan type="button" jika tidak ingin tombol ini mengirimkan form
                                     className="mt-4 w-40"
                                     disabled={processing}
-                                    onClick={() => setUpdateStatus('rejected')}
+                                    onClick={() => setUpdateStatus("rejected")}
                                 >
                                     {processing ? (
                                         <ClipLoader size={20} />
@@ -176,7 +202,7 @@ export default function View({ title, auth, flash, claimcustomer }: PageProps) {
                                     type="button" // Gunakan type="button" jika tidak ingin tombol ini mengirimkan form
                                     className="mt-4 w-40"
                                     disabled={processing}
-                                    onClick={() => setUpdateStatus('approved')}
+                                    onClick={() => setUpdateStatus("approved")}
                                 >
                                     {processing ? (
                                         <ClipLoader size={20} />
@@ -186,8 +212,6 @@ export default function View({ title, auth, flash, claimcustomer }: PageProps) {
                                 </Button>
                             </>
                         )}
-
-
                     </div>
                 </div>
             </div>

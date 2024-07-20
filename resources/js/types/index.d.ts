@@ -1,18 +1,20 @@
+import { SweetAlertIcon } from "sweetalert2";
+
 export interface User {
     id: string;
     store: Store;
-    notifications: Notification
+    notifications: Notification;
     email: string;
     email_verified_at: string;
 }
 
 export interface Notification {
-    id: string,
+    id: string;
     data: {
         message: string;
         fileName?: string;
     };
-    read_at : Date,
+    read_at: Date;
 }
 
 export interface Store {
@@ -37,7 +39,7 @@ export interface Product {
     price: number;
     total_price: number;
     pictureBase64: string;
-    category_id : string;
+    category_id: string;
     category: Category | null;
     discount: Discount | null;
 }
@@ -55,7 +57,7 @@ export interface ProductTransaction {
     pictureBase64: string;
     category: Category | null;
     discount: Discount | null;
-    transaction_details : TransactionDetail[];
+    transaction_details: TransactionDetail[];
     purchase_details: PurchaseDetail[];
 }
 
@@ -96,7 +98,6 @@ export interface PurchaseDetail {
     updated_at: Date;
 }
 
-
 export interface Purchase {
     id: string;
     supplier_id: string;
@@ -109,7 +110,7 @@ export interface Purchase {
     total_payment: number;
     created_at: Date;
     updated_at: Date;
-    supplier : Supplier | null;
+    supplier: Supplier | null;
 }
 
 export interface HoldTransaction {
@@ -156,8 +157,9 @@ export interface Session {
 }
 
 export interface Flash {
-    type_message: String;
-    message: String;
+    title: string;
+    type_message: SweetAlertIcon;
+    message: string;
 }
 
 export interface ChartDataProps {
@@ -172,26 +174,26 @@ export interface ChartDataProps {
 }
 
 export interface ClaimCustomer {
-    id : string;
+    id: string;
     transaction: Transaction;
     product: Product;
     quantity: number;
     status: string;
-    description : string;
-    created_at : Date;
-    updated_at : Date;
+    description: string;
+    created_at: Date;
+    updated_at: Date;
 }
 
 export interface ClaimSupplier {
-    id : string;
+    id: string;
     purchase: Purchase;
     supplier: Supplier;
     product: Product;
     quantity: number;
     status: string;
-    description : string;
-    created_at : Date;
-    updated_at : Date;
+    description: string;
+    created_at: Date;
+    updated_at: Date;
 }
 
 export type PageProps<

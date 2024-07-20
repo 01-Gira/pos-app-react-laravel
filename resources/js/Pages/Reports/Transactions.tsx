@@ -2,54 +2,90 @@ import BarChartComponent from "@/Components/BarChartComponent";
 import LineChartComponent from "@/Components/LineChartComponent";
 import PieChartComponent from "@/Components/PieChartComponent";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
-import { PageProps, Purchase, PurchaseDetail, Supplier, Transaction, TransactionDetail } from "@/types";
-import { formatRupiah, getFirstDayOfMonth, getLastDayOfMonth, randomColor } from "@/utils/Utils";
+import {
+    PageProps,
+    Purchase,
+    PurchaseDetail,
+    Supplier,
+    Transaction,
+    TransactionDetail,
+} from "@/types";
+import {
+    formatRupiah,
+    getFirstDayOfMonth,
+    getLastDayOfMonth,
+    randomColor,
+} from "@/utils/Utils";
 import { Head, router } from "@inertiajs/react";
 import axios from "axios";
 import { eachDayOfInterval, format, parseISO } from "date-fns";
 import { id } from "date-fns/locale/id";
-import { Button, Datepicker, FloatingLabel, Label, Modal, Select } from "flowbite-react";
+import {
+    Button,
+    Datepicker,
+    FloatingLabel,
+    Label,
+    Modal,
+    Select,
+} from "flowbite-react";
 import { ChangeEvent, useEffect, useMemo, useState } from "react";
 import { Bar } from "react-chartjs-2";
 import DataTable, { TableColumn } from "react-data-table-component";
 import { HiOutlinePlus, HiOutlineExclamationCircle } from "react-icons/hi";
 import Swal from "sweetalert2";
 
-export default function Transactions({ title, auth, flash, categories }: PageProps) {
-
+export default function Transactions({
+    title,
+    auth,
+    flash,
+    categories,
+}: PageProps) {
     const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [purchases, setPurchases] = useState<Purchase[]>([]);
 
     const [transactionPagination, setTransactionPagination] = useState<any>({});
     const [purchasePagination, setPurchasePagination] = useState<any>({});
 
-    const [startDate, setStartDate] = useState('');
-    const [endDate, setEndDate] = useState('');
-    const [statusFilter, setStatusFilter] = useState<string>('');
-    const [paymentMethodFilter, setPaymentMethodFilter] = useState<string>('');
-    const [categoryFilter, setCategoryFilter] = useState<string>('');
+    const [startDate, setStartDate] = useState("");
+    const [endDate, setEndDate] = useState("");
+    const [statusFilter, setStatusFilter] = useState<string>("");
+    const [paymentMethodFilter, setPaymentMethodFilter] = useState<string>("");
+    const [categoryFilter, setCategoryFilter] = useState<string>("");
 
-    const [searchQueryTransaction, setSearchQueryTransaction] = useState<string>('');
-    const [searchQueryPurchase, setSearchQueryPurchase] = useState<string>('');
+    const [searchQueryTransaction, setSearchQueryTransaction] =
+        useState<string>("");
+    const [searchQueryPurchase, setSearchQueryPurchase] = useState<string>("");
 
-    const [currentPageTransaction, setCurrentPageTransaction] = useState<number>(1);
+    const [currentPageTransaction, setCurrentPageTransaction] =
+        useState<number>(1);
     const [currentPagePurchase, setCurrentPagePurchase] = useState<number>(1);
 
-    const [rowsPerPageTransaction, setRowsPerPageTransaction] = useState<number>(5);
+    const [rowsPerPageTransaction, setRowsPerPageTransaction] =
+        useState<number>(5);
     const [rowsPerPagePurchase, setRowsPerPagePurchase] = useState<number>(5);
 
-    const [selectedRowsTransaction, setSelectedRowsTransaction] = useState<Transaction[]>([]);
-    const [selectedRowsPurchase, setSelectedRowsPurchase] = useState<PurchaseDetail[]>([]);
-    const [toggleClearedTransaction, setToggleClearedTransaction] = useState<boolean>(false);
-    const [toggleClearedPurchase, setToggleClearedPurchase] = useState<boolean>(false);
+    const [selectedRowsTransaction, setSelectedRowsTransaction] = useState<
+        Transaction[]
+    >([]);
+    const [selectedRowsPurchase, setSelectedRowsPurchase] = useState<
+        PurchaseDetail[]
+    >([]);
+    const [toggleClearedTransaction, setToggleClearedTransaction] =
+        useState<boolean>(false);
+    const [toggleClearedPurchase, setToggleClearedPurchase] =
+        useState<boolean>(false);
 
-    const [pendingTransactions, setPendingTransactions] = useState<boolean>(false);
+    const [pendingTransactions, setPendingTransactions] =
+        useState<boolean>(false);
     const [pendingPurchases, setPendingPurchases] = useState<boolean>(false);
 
-    const fetchDataTransactions = async (params:any) => {
+    const fetchDataTransactions = async (params: any) => {
         setPendingTransactions(true);
         try {
-            const res = await axios.get(route('report.transactions.get-transactions'), { params });
+            const res = await axios.get(
+                route("report.transactions.get-transactions"),
+                { params }
+            );
             const data = res.data;
             if (data) {
                 setTransactions(data.transactions);
@@ -61,16 +97,19 @@ export default function Transactions({ title, auth, flash, categories }: PagePro
                 setEndDate(data.end_date || endDate);
             }
         } catch (error) {
-            console.error('Error fetching data:', error);
+            console.error("Error fetching data:", error);
         } finally {
             setPendingTransactions(false);
         }
     };
 
-    const fetchDataPurchases = async (params:any) => {
+    const fetchDataPurchases = async (params: any) => {
         setPendingPurchases(true);
         try {
-            const res = await axios.get(route('report.transactions.get-purchases'), { params });
+            const res = await axios.get(
+                route("report.transactions.get-purchases"),
+                { params }
+            );
             const data = res.data;
 
             if (data) {
@@ -80,7 +119,7 @@ export default function Transactions({ title, auth, flash, categories }: PagePro
                 setRowsPerPagePurchase(data.pagination.per_page);
             }
         } catch (error) {
-            console.error('Error fetching data:', error);
+            console.error("Error fetching data:", error);
         } finally {
             setPendingPurchases(false);
         }
@@ -93,7 +132,7 @@ export default function Transactions({ title, auth, flash, categories }: PagePro
             page,
             start_date: startDate,
             end_date: endDate,
-            status: statusFilter
+            status: statusFilter,
         });
     };
 
@@ -104,11 +143,14 @@ export default function Transactions({ title, auth, flash, categories }: PagePro
             page,
             start_date: startDate,
             end_date: endDate,
-            status: statusFilter
+            status: statusFilter,
         });
     };
 
-    const onRowsPerPageChangeTransaction = (newRowsPerPage: number, page: number) => {
+    const onRowsPerPageChangeTransaction = (
+        newRowsPerPage: number,
+        page: number
+    ) => {
         setRowsPerPageTransaction(newRowsPerPage);
         fetchDataTransactions({
             search: searchQueryTransaction,
@@ -116,11 +158,14 @@ export default function Transactions({ title, auth, flash, categories }: PagePro
             per_page: newRowsPerPage,
             start_date: startDate,
             end_date: endDate,
-            status: statusFilter
+            status: statusFilter,
         });
     };
 
-    const onRowsPerPageChangePurchase = (newRowsPerPage: number, page: number) => {
+    const onRowsPerPageChangePurchase = (
+        newRowsPerPage: number,
+        page: number
+    ) => {
         setRowsPerPagePurchase(newRowsPerPage);
         fetchDataPurchases({
             search: searchQueryPurchase,
@@ -128,18 +173,20 @@ export default function Transactions({ title, auth, flash, categories }: PagePro
             per_page: newRowsPerPage,
             start_date: startDate,
             end_date: endDate,
-            status: statusFilter
+            status: statusFilter,
         });
     };
 
-    const onSearchChangeTransaction = (event: ChangeEvent<HTMLInputElement>) => {
+    const onSearchChangeTransaction = (
+        event: ChangeEvent<HTMLInputElement>
+    ) => {
         setSearchQueryTransaction(event.target.value);
         fetchDataTransactions({
             search: event.target.value,
             page: 1,
             start_date: startDate,
             end_date: endDate,
-            status: statusFilter
+            status: statusFilter,
         });
     };
 
@@ -151,7 +198,7 @@ export default function Transactions({ title, auth, flash, categories }: PagePro
             page: 1,
             start_date: startDate,
             end_date: endDate,
-            status: statusFilter
+            status: statusFilter,
         });
     };
 
@@ -165,7 +212,7 @@ export default function Transactions({ title, auth, flash, categories }: PagePro
             page: 1,
             start_date: newDate,
             end_date: endDate,
-            status: statusFilter
+            status: statusFilter,
         });
 
         fetchDataTransactions({
@@ -173,7 +220,7 @@ export default function Transactions({ title, auth, flash, categories }: PagePro
             page: 1,
             start_date: newDate,
             end_date: endDate,
-            status: statusFilter
+            status: statusFilter,
         });
     };
 
@@ -187,7 +234,7 @@ export default function Transactions({ title, auth, flash, categories }: PagePro
             page: 1,
             start_date: startDate,
             end_date: newDate,
-            status: statusFilter
+            status: statusFilter,
         });
 
         fetchDataTransactions({
@@ -195,7 +242,7 @@ export default function Transactions({ title, auth, flash, categories }: PagePro
             page: 1,
             start_date: startDate,
             end_date: newDate,
-            status: statusFilter
+            status: statusFilter,
         });
     };
 
@@ -207,7 +254,7 @@ export default function Transactions({ title, auth, flash, categories }: PagePro
             page: 1,
             start_date: startDate,
             end_date: endDate,
-            status: e.target.value
+            status: e.target.value,
         });
 
         fetchDataTransactions({
@@ -215,7 +262,7 @@ export default function Transactions({ title, auth, flash, categories }: PagePro
             page: 1,
             start_date: startDate,
             end_date: endDate,
-            status: e.target.value
+            status: e.target.value,
         });
     };
 
@@ -229,7 +276,7 @@ export default function Transactions({ title, auth, flash, categories }: PagePro
             end_date: endDate,
             status: statusFilter,
             category: categoryFilter,
-            payment_method: e.target.value
+            payment_method: e.target.value,
         });
 
         fetchDataTransactions({
@@ -239,7 +286,7 @@ export default function Transactions({ title, auth, flash, categories }: PagePro
             end_date: endDate,
             status: statusFilter,
             category: categoryFilter,
-            payment_method: e.target.value
+            payment_method: e.target.value,
         });
     };
 
@@ -253,7 +300,7 @@ export default function Transactions({ title, auth, flash, categories }: PagePro
             end_date: endDate,
             status: statusFilter,
             payment_method: paymentMethodFilter,
-            category: e.target.value
+            category: e.target.value,
         });
 
         fetchDataTransactions({
@@ -263,10 +310,9 @@ export default function Transactions({ title, auth, flash, categories }: PagePro
             end_date: endDate,
             status: statusFilter,
             payment_method: paymentMethodFilter,
-            category: e.target.value
+            category: e.target.value,
         });
     };
-
 
     const columnsTransaction: TableColumn<Transaction>[] = [
         {
@@ -286,17 +332,17 @@ export default function Transactions({ title, auth, flash, categories }: PagePro
         },
         {
             name: "Subtotal",
-            selector : (row: Transaction) => formatRupiah(row.subtotal),
+            selector: (row: Transaction) => formatRupiah(row.subtotal),
             sortable: true,
         },
         {
             name: "PPN",
-            selector : (row: Transaction) => formatRupiah(row.ppn),
+            selector: (row: Transaction) => formatRupiah(row.ppn),
             sortable: true,
         },
         {
             name: "Total Payment",
-            selector : (row: Transaction) => formatRupiah(row.total_payment),
+            selector: (row: Transaction) => formatRupiah(row.total_payment),
             sortable: true,
         },
         {
@@ -306,7 +352,6 @@ export default function Transactions({ title, auth, flash, categories }: PagePro
             sortable: true,
         },
     ];
-
 
     const columnsPurchase: TableColumn<Purchase>[] = [
         {
@@ -331,17 +376,17 @@ export default function Transactions({ title, auth, flash, categories }: PagePro
         },
         {
             name: "Subtotal",
-            selector : (row: Purchase) => formatRupiah(row.subtotal),
+            selector: (row: Purchase) => formatRupiah(row.subtotal),
             sortable: true,
         },
         {
             name: "PPN",
-            selector : (row: Purchase) => formatRupiah(row.ppn),
+            selector: (row: Purchase) => formatRupiah(row.ppn),
             sortable: true,
         },
         {
             name: "Total Payment",
-            selector : (row: Purchase) => formatRupiah(row.total_payment),
+            selector: (row: Purchase) => formatRupiah(row.total_payment),
             sortable: true,
         },
         {
@@ -365,7 +410,8 @@ export default function Transactions({ title, auth, flash, categories }: PagePro
         },
         {
             name: "Category",
-            selector: (row: TransactionDetail) => row.product?.category?.category_name || '',
+            selector: (row: TransactionDetail) =>
+                row.product?.category?.category_name || "",
             sortable: true,
         },
         {
@@ -387,7 +433,7 @@ export default function Transactions({ title, auth, flash, categories }: PagePro
             name: "Total Price",
             selector: (row: TransactionDetail) => formatRupiah(row.total_price),
             sortable: true,
-        }
+        },
     ];
 
     const columnsPurchaseDetails: TableColumn<PurchaseDetail>[] = [
@@ -403,7 +449,8 @@ export default function Transactions({ title, auth, flash, categories }: PagePro
         },
         {
             name: "Category",
-            selector: (row: PurchaseDetail) => row.product?.category?.category_name || '',
+            selector: (row: PurchaseDetail) =>
+                row.product?.category?.category_name || "",
             sortable: true,
         },
         {
@@ -425,7 +472,7 @@ export default function Transactions({ title, auth, flash, categories }: PagePro
             name: "Total Price",
             selector: (row: PurchaseDetail) => formatRupiah(row.total_price),
             sortable: true,
-        }
+        },
     ];
 
     const handleChangeTransaction = (rows: any) => {
@@ -441,202 +488,255 @@ export default function Transactions({ title, auth, flash, categories }: PagePro
         setToggleClearedPurchase(!toggleClearedPurchase);
     };
 
-    const totalIncome = transactions.reduce((total, transaction) => total + transaction.total_payment, 0);
+    const totalIncome = transactions.reduce(
+        (total, transaction) => total + transaction.total_payment,
+        0
+    );
 
-    const totalExpenses = purchases.reduce((total, purchase) => total + purchase.total_payment, 0);
+    const totalExpenses = purchases.reduce(
+        (total, purchase) => total + purchase.total_payment,
+        0
+    );
 
     let dateRange: string[] = [];
 
     if (startDate && endDate) {
         dateRange = eachDayOfInterval({
-            start: parseISO(format(startDate, 'yyyy-MM-dd')),
-            end: parseISO(format(endDate, 'yyyy-MM-dd')),
-        }).map(date => format(date, 'dd MMMM yyyy'));
+            start: parseISO(format(startDate, "yyyy-MM-dd")),
+            end: parseISO(format(endDate, "yyyy-MM-dd")),
+        }).map((date) => format(date, "dd MMMM yyyy"));
     }
 
-    const dataSetData1 = dateRange.map(date => {
-        const transactionsOnDate = transactions.filter( transaction => {
+    const dataSetData1 = dateRange.map((date) => {
+        const transactionsOnDate = transactions.filter((transaction) => {
             const transactionDate = new Date(transaction.transaction_date);
-            const formattedPurchaseDate = format(transactionDate, 'dd MMMM yyyy');
+            const formattedPurchaseDate = format(
+                transactionDate,
+                "dd MMMM yyyy"
+            );
 
             return formattedPurchaseDate === date;
         });
 
-        const totalPayment = transactionsOnDate.reduce((sum, transaction) => sum + transaction.total_payment, 0);
+        const totalPayment = transactionsOnDate.reduce(
+            (sum, transaction) => sum + transaction.total_payment,
+            0
+        );
         return totalPayment;
     });
 
-
-    const dataSetData2 = dateRange.map(date => {
-        const purchasesOnDate = purchases.filter(purchase => {
+    const dataSetData2 = dateRange.map((date) => {
+        const purchasesOnDate = purchases.filter((purchase) => {
             const purchaseDate = new Date(purchase.purchase_date);
-            const formattedPurchaseDate = format(purchaseDate, 'dd MMMM yyyy');
+            const formattedPurchaseDate = format(purchaseDate, "dd MMMM yyyy");
 
             return formattedPurchaseDate === date;
         });
 
-        const totalPayment = purchasesOnDate.reduce((sum, purchase) => sum + purchase.total_payment, 0);
+        const totalPayment = purchasesOnDate.reduce(
+            (sum, purchase) => sum + purchase.total_payment,
+            0
+        );
         return totalPayment;
     });
 
     const datasets = [
         {
-            label: 'Total Income',
-            backgroundColor: 'rgba(92, 184, 92, 0.2)',
-            borderColor: 'rgba(92, 184, 92, 1)',
+            label: "Total Income",
+            backgroundColor: "rgba(92, 184, 92, 0.2)",
+            borderColor: "rgba(92, 184, 92, 1)",
             borderWidth: 2,
             data: dataSetData1,
         },
         {
-            label: 'Total Expenses',
-            backgroundColor: 'rgba(217, 83, 79, 0.2)',
-            borderColor: 'rgba(217, 83, 79, 1)',
+            label: "Total Expenses",
+            backgroundColor: "rgba(217, 83, 79, 0.2)",
+            borderColor: "rgba(217, 83, 79, 1)",
             borderWidth: 2,
             data: dataSetData2,
         },
     ];
 
-    const labelTransactionCategories: string[] = Array.from(new Set(
-        transactions
-            .flatMap(value => value.transaction_details.map(detail => detail.product.category?.category_name))
-            .filter((name): name is string => name !== undefined)
-    ));
+    const labelTransactionCategories: string[] = Array.from(
+        new Set(
+            transactions
+                .flatMap((value) =>
+                    value.transaction_details.map(
+                        (detail) => detail.product.category?.category_name
+                    )
+                )
+                .filter((name): name is string => name !== undefined)
+        )
+    );
 
-    const labelPurchaseCategories: string[] = Array.from(new Set(
-        purchases
-            .flatMap(value => value.purchase_details.map(detail => detail.product.category?.category_name))
-            .filter((name): name is string => name !== undefined)
-    ));
+    const labelPurchaseCategories: string[] = Array.from(
+        new Set(
+            purchases
+                .flatMap((value) =>
+                    value.purchase_details.map(
+                        (detail) => detail.product.category?.category_name
+                    )
+                )
+                .filter((name): name is string => name !== undefined)
+        )
+    );
 
-    const dataChartCategoryTransactions: number[] = labelTransactionCategories.map(label => {
-        // Filter transactions based on category label
-        const transactionsForCategory = transactions
-            .filter(transaction =>
-                transaction.transaction_details.some(detail =>
-                    detail.product.category?.category_name === label
+    const dataChartCategoryTransactions: number[] =
+        labelTransactionCategories.map((label) => {
+            // Filter transactions based on category label
+            const transactionsForCategory = transactions.filter((transaction) =>
+                transaction.transaction_details.some(
+                    (detail) => detail.product.category?.category_name === label
                 )
             );
 
-        // Calculate total payment for the current category
-        const totalTotalPayment = transactionsForCategory.reduce((sum, transaction) => {
-            return sum + transaction.total_payment;  // Accessing total_payment from Transaction interface
-        }, 0);
+            // Calculate total payment for the current category
+            const totalTotalPayment = transactionsForCategory.reduce(
+                (sum, transaction) => {
+                    return sum + transaction.total_payment; // Accessing total_payment from Transaction interface
+                },
+                0
+            );
 
-        return totalTotalPayment;
-    });
+            return totalTotalPayment;
+        });
 
-
-    const dataChartCategoryPurchases: number[] = labelPurchaseCategories.map(label => {
-        const purchasesForCategory = purchases
-            .filter(purcahse =>
-                purcahse.purchase_details.some(detail =>
-                    detail.product.category?.category_name === label
+    const dataChartCategoryPurchases: number[] = labelPurchaseCategories.map(
+        (label) => {
+            const purchasesForCategory = purchases.filter((purcahse) =>
+                purcahse.purchase_details.some(
+                    (detail) => detail.product.category?.category_name === label
                 )
             );
 
-        // Calculate total payment for the current category
-        const totalTotalPayment = purchasesForCategory.reduce((sum, purchase) => {
-            return sum + purchase.total_payment;  // Accessing total_payment from Transaction interface
-        }, 0);
+            // Calculate total payment for the current category
+            const totalTotalPayment = purchasesForCategory.reduce(
+                (sum, purchase) => {
+                    return sum + purchase.total_payment; // Accessing total_payment from Transaction interface
+                },
+                0
+            );
 
-        return totalTotalPayment;
-    });
+            return totalTotalPayment;
+        }
+    );
 
     const color: string[] = labelTransactionCategories.map(() => randomColor());
 
-
     const datasetCategory = [
         {
-            label: 'Total Income',
+            label: "Total Income",
             backgroundColor: color,
             borderColor: color,
             borderWidth: 1,
             data: dataChartCategoryTransactions,
         },
         {
-            label: 'Total Expenses',
+            label: "Total Expenses",
             backgroundColor: color,
             borderColor: color,
             borderWidth: 1,
             data: dataChartCategoryPurchases,
-        }
+        },
     ];
 
-    const labelProductTransactions: string[] = Array.from(new Set(
-        transactions
-            .flatMap(value => value.transaction_details.map(detail => detail.product.product_name))
-            .filter((name): name is string => name !== undefined)
-    ));
+    const labelProductTransactions: string[] = Array.from(
+        new Set(
+            transactions
+                .flatMap((value) =>
+                    value.transaction_details.map(
+                        (detail) => detail.product.product_name
+                    )
+                )
+                .filter((name): name is string => name !== undefined)
+        )
+    );
 
-    const labelProductPurchases: string[] = Array.from(new Set(
-        purchases
-            .flatMap(value => value.purchase_details.map(detail => detail.product.product_name))
-            .filter((name): name is string => name !== undefined)
-    ));
+    const labelProductPurchases: string[] = Array.from(
+        new Set(
+            purchases
+                .flatMap((value) =>
+                    value.purchase_details.map(
+                        (detail) => detail.product.product_name
+                    )
+                )
+                .filter((name): name is string => name !== undefined)
+        )
+    );
 
-    const dataChartProductTransactions: number[] = labelProductTransactions.map(label => {
-        // Filter transactions based on category label
-        const transactionsForCategory = transactions
-            .filter(transaction =>
-                transaction.transaction_details.some(detail =>
-                    detail.product.product_name === label
+    const dataChartProductTransactions: number[] = labelProductTransactions.map(
+        (label) => {
+            // Filter transactions based on category label
+            const transactionsForCategory = transactions.filter((transaction) =>
+                transaction.transaction_details.some(
+                    (detail) => detail.product.product_name === label
                 )
             );
 
-        // Calculate total payment for the current category
-        const totalTotalPayment = transactionsForCategory.reduce((sum, transaction) => {
-            return sum + transaction.total_payment;  // Accessing total_payment from Transaction interface
-        }, 0);
+            // Calculate total payment for the current category
+            const totalTotalPayment = transactionsForCategory.reduce(
+                (sum, transaction) => {
+                    return sum + transaction.total_payment; // Accessing total_payment from Transaction interface
+                },
+                0
+            );
 
-        return totalTotalPayment;
-    });
+            return totalTotalPayment;
+        }
+    );
 
-    const dataChartProductPurchases: number[] = labelProductTransactions.map(label => {
-        // Filter transactions based on category label
-        const purchasesForProduct = purchases
-            .filter(transaction =>
-                transaction.purchase_details.some(detail =>
-                    detail.product.product_name === label
+    const dataChartProductPurchases: number[] = labelProductTransactions.map(
+        (label) => {
+            // Filter transactions based on category label
+            const purchasesForProduct = purchases.filter((transaction) =>
+                transaction.purchase_details.some(
+                    (detail) => detail.product.product_name === label
                 )
             );
 
-        // Calculate total payment for the current Product
-        const totalTotalPayment = purchasesForProduct.reduce((sum, transaction) => {
-            return sum + transaction.total_payment;  // Accessing total_payment from Transaction interface
-        }, 0);
+            // Calculate total payment for the current Product
+            const totalTotalPayment = purchasesForProduct.reduce(
+                (sum, transaction) => {
+                    return sum + transaction.total_payment; // Accessing total_payment from Transaction interface
+                },
+                0
+            );
 
-        return totalTotalPayment;
-    });
-
+            return totalTotalPayment;
+        }
+    );
 
     const datasetProduct = [
-        {   label: 'Total Income',
-            backgroundColor: 'rgba(92, 184, 92, 0.2)',
-            borderColor: 'rgba(92, 184, 92, 1)',
+        {
+            label: "Total Income",
+            backgroundColor: "rgba(92, 184, 92, 0.2)",
+            borderColor: "rgba(92, 184, 92, 1)",
             borderWidth: 1,
-            data: dataChartProductTransactions
+            data: dataChartProductTransactions,
         },
         {
-            label: 'Total Expenses',
-            backgroundColor: 'rgba(217, 83, 79, 0.2)',
-            borderColor: 'rgba(217, 83, 79, 1)',
+            label: "Total Expenses",
+            backgroundColor: "rgba(217, 83, 79, 0.2)",
+            borderColor: "rgba(217, 83, 79, 1)",
             borderWidth: 2,
             data: dataChartProductPurchases,
-        }
-
+        },
     ];
 
-    const exportHandle = async(type : string) => {
+    const exportHandle = async (type: string) => {
         const params = new URLSearchParams({
             start_date: startDate,
             end_date: endDate,
             status: statusFilter,
-            payment_method: paymentMethodFilter
+            payment_method: paymentMethodFilter,
         });
 
-        const url = route('report.exports.transactions.export-data', type ) + '?' + params.toString();
+        const url =
+            route("report.exports.transactions.export-data", type) +
+            "?" +
+            params.toString();
         window.location.href = url;
-    }
+    };
 
     return (
         <AuthenticatedLayout
@@ -653,13 +753,12 @@ export default function Transactions({ title, auth, flash, categories }: PagePro
                 <h2>Filter</h2>
                 <div className="grid grid-cols-3 gap-4 mt-5 mb-5">
                     <div>
-                        <Label
-                            htmlFor="start_date"
-                            value="Start Date"
-                        />
+                        <Label htmlFor="start_date" value="Start Date" />
                         <Datepicker
                             id="start_date"
-                            onSelectedDateChanged={date => onStartDateChange(date)}
+                            onSelectedDateChanged={(date) =>
+                                onStartDateChange(date)
+                            }
                             value={startDate}
                         />
                     </div>
@@ -667,7 +766,9 @@ export default function Transactions({ title, auth, flash, categories }: PagePro
                         <Label htmlFor="end_date" value="End Date" />
                         <Datepicker
                             id="end_date"
-                            onSelectedDateChanged={date => onEndDateChange(date)}
+                            onSelectedDateChanged={(date) =>
+                                onEndDateChange(date)
+                            }
                             value={endDate}
                         />
                     </div>
@@ -686,7 +787,10 @@ export default function Transactions({ title, auth, flash, categories }: PagePro
                         </Select>
                     </div>
                     <div>
-                        <Label htmlFor="payment_method" value="Payment Method" />
+                        <Label
+                            htmlFor="payment_method"
+                            value="Payment Method"
+                        />
                         <Select
                             id="payment_method"
                             value={paymentMethodFilter}
@@ -698,6 +802,7 @@ export default function Transactions({ title, auth, flash, categories }: PagePro
                             <option value="credit">Credit</option>
                         </Select>
                     </div>
+
                     {/* <div>
                         <Label htmlFor="category" value="Category" />
                         <Select
@@ -718,36 +823,57 @@ export default function Transactions({ title, auth, flash, categories }: PagePro
             <div className="p-7 border border-gray-200 dark:border-gray-700 shadow-lg rounded-lg mb-5">
                 <div className="grid grid-cols-2 gap-4 mt-5 mb-5">
                     <div className="bg-green-200 p-4 rounded-lg shadow-md">
-                        <h3 className="text-lg font-bold mb-2">Total Income with {rowsPerPageTransaction} Data</h3>
-                        <p className="text-gray-700">Total: {formatRupiah(totalIncome)}</p>
+                        <h3 className="text-lg font-bold mb-2">
+                            Total Income with {rowsPerPageTransaction} Data
+                        </h3>
+                        <p className="text-gray-700">
+                            Total: {formatRupiah(totalIncome)}
+                        </p>
                     </div>
                     <div className="bg-red-200 p-4 rounded-lg shadow-md">
-                        <h3 className="text-lg font-bold mb-2">Total Expenses with {rowsPerPagePurchase} Data</h3>
-                        <p className="text-gray-700">Total: {formatRupiah(totalExpenses)}</p>
+                        <h3 className="text-lg font-bold mb-2">
+                            Total Expenses with {rowsPerPagePurchase} Data
+                        </h3>
+                        <p className="text-gray-700">
+                            Total: {formatRupiah(totalExpenses)}
+                        </p>
                     </div>
                 </div>
                 <div>
                     <h2>By Date</h2>
                     <div className="grid grid-cols-2 gap-4 mt-5 mb-5">
-                        <LineChartComponent labels={dateRange} datasets={datasets} />
-                        <BarChartComponent labels={dateRange} datasets={datasets} />
+                        <LineChartComponent
+                            labels={dateRange}
+                            datasets={datasets}
+                        />
+                        <BarChartComponent
+                            labels={dateRange}
+                            datasets={datasets}
+                        />
                     </div>
                 </div>
                 <div>
                     <h2>By Product</h2>
                     <div className="grid grid-cols-2 gap-4 mt-5 mb-5">
-                        <LineChartComponent labels={labelProductTransactions} datasets={datasetProduct} />
-                        <BarChartComponent labels={labelProductPurchases} datasets={datasetProduct} />
+                        <LineChartComponent
+                            labels={labelProductTransactions}
+                            datasets={datasetProduct}
+                        />
+                        <BarChartComponent
+                            labels={labelProductPurchases}
+                            datasets={datasetProduct}
+                        />
                     </div>
                 </div>
                 <div>
                     <h2>By Category</h2>
                     <div className="grid grid-cols-1 gap-4 mt-5 mb-5">
-                        <PieChartComponent labels={labelTransactionCategories} datasets={datasetCategory}/>
-
+                        <PieChartComponent
+                            labels={labelTransactionCategories}
+                            datasets={datasetCategory}
+                        />
                     </div>
                 </div>
-
             </div>
 
             <div className="p-7 border border-gray-200 dark:border-gray-700 shadow-lg rounded-lg mb-5">
@@ -755,7 +881,10 @@ export default function Transactions({ title, auth, flash, categories }: PagePro
                 <div className="flex justify-between items-center mt-4">
                     <div className="flex space-x-4">
                         <Button.Group>
-                            <Button onClick={() => exportHandle('Transactions')} color="green">
+                            <Button
+                                onClick={() => exportHandle("Transactions")}
+                                color="green"
+                            >
                                 Excel
                             </Button>
                         </Button.Group>
@@ -779,7 +908,13 @@ export default function Transactions({ title, auth, flash, categories }: PagePro
                         paginationPerPage={rowsPerPageTransaction}
                         paginationTotalRows={transactionPagination}
                         paginationDefaultPage={currentPageTransaction}
-                        paginationRowsPerPageOptions={[5, 10, 25, 50, transactionPagination]}
+                        paginationRowsPerPageOptions={[
+                            5,
+                            10,
+                            25,
+                            50,
+                            transactionPagination,
+                        ]}
                         onChangePage={onPageChangeTransaction}
                         onChangeRowsPerPage={onRowsPerPageChangeTransaction}
                         highlightOnHover
@@ -794,7 +929,10 @@ export default function Transactions({ title, auth, flash, categories }: PagePro
                 <div className="flex justify-between items-center mt-4">
                     <div className="flex space-x-4">
                         <Button.Group>
-                            <Button onClick={() => exportHandle('Purchases')}  color="green">
+                            <Button
+                                onClick={() => exportHandle("Purchases")}
+                                color="green"
+                            >
                                 Excel
                             </Button>
                         </Button.Group>
@@ -818,7 +956,13 @@ export default function Transactions({ title, auth, flash, categories }: PagePro
                         paginationPerPage={rowsPerPagePurchase}
                         paginationTotalRows={purchasePagination}
                         paginationDefaultPage={currentPagePurchase}
-                        paginationRowsPerPageOptions={[5, 10, 25, 50, purchasePagination]}
+                        paginationRowsPerPageOptions={[
+                            5,
+                            10,
+                            25,
+                            50,
+                            purchasePagination,
+                        ]}
                         onChangePage={onPageChangePurchase}
                         onChangeRowsPerPage={onRowsPerPageChangePurchase}
                         highlightOnHover
@@ -833,7 +977,12 @@ export default function Transactions({ title, auth, flash, categories }: PagePro
                     <h2>Transaction Details</h2>
                     <div className="flex space-x-4 mt-4">
                         <Button.Group>
-                            <Button onClick={() => exportHandle('Transaction Details')}  color="green">
+                            <Button
+                                onClick={() =>
+                                    exportHandle("Transaction Details")
+                                }
+                                color="green"
+                            >
                                 Excel
                             </Button>
                         </Button.Group>
@@ -844,7 +993,9 @@ export default function Transactions({ title, auth, flash, categories }: PagePro
                         pagination
                         paginationRowsPerPageOptions={[5, 10, 25, 50, 100]}
                         columns={columnsTransactionDetails}
-                        data={transactions.flatMap(value => value.transaction_details)}
+                        data={transactions.flatMap(
+                            (value) => value.transaction_details
+                        )}
                     />
                 </div>
 
@@ -852,7 +1003,10 @@ export default function Transactions({ title, auth, flash, categories }: PagePro
                     <h2>Purchase Details</h2>
                     <div className="flex space-x-4 mt-4">
                         <Button.Group>
-                            <Button onClick={() => exportHandle('Purchase Details')}  color="green">
+                            <Button
+                                onClick={() => exportHandle("Purchase Details")}
+                                color="green"
+                            >
                                 Excel
                             </Button>
                         </Button.Group>
@@ -863,13 +1017,12 @@ export default function Transactions({ title, auth, flash, categories }: PagePro
                         pagination
                         paginationRowsPerPageOptions={[5, 10, 25, 50, 100]}
                         columns={columnsPurchaseDetails}
-                        data={purchases.flatMap(value => value.purchase_details)}
+                        data={purchases.flatMap(
+                            (value) => value.purchase_details
+                        )}
                     />
                 </div>
             </div>
-
-
         </AuthenticatedLayout>
     );
 }
-

@@ -84,6 +84,7 @@ class DiscountController extends Controller
             $logs->insertLog('Discount.store : Successfully add discount');
 
             return to_route('master.discounts.index')->with([
+                'title' => 'Success',
                 'type_message' => 'success',
                 'message' => 'Successfully add discount to ' . $validated['product_name']
             ]);
@@ -92,7 +93,8 @@ class DiscountController extends Controller
             DB::connection('pgsql')->rollback();
 
             return to_route('master.discounts.index')->with([
-                'type_message' => 'warning',
+                'title' => 'Error',
+                'type_message' => 'error',
                 'message' => 'Oops Something Went Wrong! Message : ' . $th->getMessage()
             ]);
         }
@@ -117,6 +119,7 @@ class DiscountController extends Controller
             $logs->insertLog('Discount.update : Successfully update discount');
 
             return to_route('master.discounts.index')->with([
+                'title' => 'Success',
                 'type_message' => 'success',
                 'message' => 'Successfully update discount'
             ]);
@@ -142,6 +145,7 @@ class DiscountController extends Controller
             DB::connection('pgsql')->commit();
 
             return to_route('master.discounts.index')->with([
+                'title' => 'Success',
                 'type_message' => 'success',
                 'message' => 'Discount deleted successfully'
             ]);
@@ -150,7 +154,8 @@ class DiscountController extends Controller
             DB::connection('pgsql')->rollback();
 
             return to_route('master.discounts.index')->with([
-                'type_message' => 'warning',
+                'title' => 'Error',
+                'type_message' => 'error',
                 'message' => 'Oops Something Went Wrong! Message : ' . $th->getMessage()
             ]);
         }

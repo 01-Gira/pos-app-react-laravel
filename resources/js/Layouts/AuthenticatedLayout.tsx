@@ -1,10 +1,11 @@
-import { useState, PropsWithChildren, ReactNode } from "react";
+import { useState, PropsWithChildren, ReactNode, useEffect } from "react";
 
 import { router } from "@inertiajs/react";
 import { Flash, User } from "@/types";
-import { Alert, Toast } from "flowbite-react";
+import { Alert } from "flowbite-react";
 import SidebarLayout from "./Authenticated/SidebarLayout";
 import HeaderLayout from "./Authenticated/HeaderLayout";
+import { Toast } from "@/utils/Utils";
 
 interface AuthenticatedLayoutProps {
     user: User;
@@ -20,6 +21,17 @@ export default function AuthenticatedLayout({
 }: PropsWithChildren<AuthenticatedLayoutProps>) {
     const [sidebarOpen, setSidebarOpen] = useState(true);
 
+    useEffect(() => {
+        if (flash.title != null) {
+            Toast.fire({
+                icon: flash.type_message,
+                title: flash.title,
+                text: flash.message,
+            });
+        }
+    }, [flash]);
+
+    console.log(flash);
     return (
         <div className="flex h-screen overflow-hidden">
             <SidebarLayout
@@ -39,7 +51,7 @@ export default function AuthenticatedLayout({
                     }`}
                 >
                     <div className="py-12 mx-auto sm:px-6 lg:px-8">
-                        {flash.message && (
+                        {/* {flash.message && (
                             <Alert
                                 onDismiss={() => router.reload()}
                                 className="mb-3"
@@ -51,7 +63,7 @@ export default function AuthenticatedLayout({
                             >
                                 {flash.message}
                             </Alert>
-                        )}
+                        )} */}
                         <div></div>
                         {children}
                     </div>

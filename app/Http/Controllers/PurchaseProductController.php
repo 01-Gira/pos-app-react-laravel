@@ -97,9 +97,6 @@ class PurchaseProductController extends Controller
                     throw new Exception('Quantity can not be less than 0');
                 }
 
-                if($value['discount'] == null){
-                    throw new Exception('Discount can not be empty!');
-                }
 
                 PurchaseDetail::updateOrCreate(
                     [

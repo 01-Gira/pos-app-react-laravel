@@ -102,6 +102,7 @@ class ClaimCustomerController extends Controller
             $log->insertLog('ClaimCustomer.store : Successfully store data');
 
             return to_route('transaction.claim-customers.index')->with([
+                'title' => 'Success',
                 'type_message' => 'success',
                 'message' => 'Successfully store data'
             ]);
@@ -110,6 +111,7 @@ class ClaimCustomerController extends Controller
             DB::connection('pgsql')->rollback();
 
             return to_route('transaction.claim-customers.index')->with([
+                'title' => 'Error',
                 'type_message' => 'error',
                 'message' => 'Oops Something Went Wrong! Message : ' . $th->getMessage()
             ]);
@@ -163,6 +165,7 @@ class ClaimCustomerController extends Controller
             $log->insertLog('ClaimCustomer.store : Successfully update data');
 
             return to_route('transaction.claim-customers.index')->with([
+                'title' => 'Success',
                 'type_message' => 'success',
                 'message' => 'Successfully update data'
             ]);
@@ -171,6 +174,7 @@ class ClaimCustomerController extends Controller
             DB::connection('pgsql')->rollback();
 
             return to_route('transaction.claim-customers.index')->with([
+                'title' => 'Error',
                 'type_message' => 'error',
                 'message' => 'Oops Something Went Wrong! Message : ' . $th->getMessage()
             ]);
@@ -218,13 +222,15 @@ class ClaimCustomerController extends Controller
             ]);
 
             return back()->with([
+                'title' => 'Success',
                 'type_message' => 'success',
                 'message' => 'Process export is on process, you will be notified when is ready to download'
             ]);
         } catch (\Throwable $th) {
             return back()->with([
+                'title' => 'Error',
                 'type_message' => 'error',
-                'message' => 'Oops Something Went Wrong! Message : ' . $th
+                'message' => 'Oops Something Went Wrong! Message : ' . $th->getMessage()
             ]);
         }
     }
