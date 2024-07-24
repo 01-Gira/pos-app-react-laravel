@@ -97,7 +97,7 @@ export default function Create({ title, auth, flash, categories }: PageProps) {
             <div className="p-7 border border-gray-200 dark:border-gray-700 shadow-lg rounded-lg">
                 <h1 className="dark:text-white text-lg">{title}</h1>
                 <form onSubmit={handleSubmit} className="mt-5">
-                    <div className="grid grid-cols-2 gap-4 mt-5">
+                    <div className="grid grid-cols-1 gap-4 mt-5">
                         <div>
                             <Label htmlFor="barcode" value="Barcode" />
                             <TextInput
@@ -106,10 +106,6 @@ export default function Create({ title, auth, flash, categories }: PageProps) {
                                 onChange={(e) => setData("barcode", e.target.value)}
                             />
                             <InputError message={errors.barcode} className="mt-2" />
-                        </div>
-                        <div>
-                            <Label htmlFor="btn" value="Generate Barcode" />
-                            <Button>Generate</Button>
                         </div>
                     </div>
                     <div className="grid grid-cols-2 gap-4 mt-5">
@@ -196,8 +192,8 @@ export default function Create({ title, auth, flash, categories }: PageProps) {
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4 mt-5">
-                        <div>
+                    <div className="grid grid-cols-1 gap-4 mt-5">
+                        {/* <div>
                             <Label htmlFor="picture" value="Upload Picture" />
                             <FileInput
                                 id="picture"
@@ -215,7 +211,7 @@ export default function Create({ title, auth, flash, categories }: PageProps) {
                                     />
                                 </div>
                             )}
-                        </div>
+                        </div> */}
                         <div>
                             <Label
                                 htmlFor="type"

@@ -1,5 +1,5 @@
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
-import { PageProps, Product } from "@/types";
+import { Failure, PageProps, Product } from "@/types";
 import { Head, Link, router, useForm } from "@inertiajs/react";
 import {
     Button,
@@ -22,6 +22,14 @@ import axios from "axios";
 import Barcode from "react-barcode";
 import withReactContent from "sweetalert2-react-content";
 
+
+
+interface ImportResponse {
+    indctr: number;
+    message: string;
+    failures?: Failure[];
+}
+
 export default function Index({
     title,
     auth,
@@ -35,13 +43,15 @@ export default function Index({
     categories,
 }: PageProps) {
     const [pending, setPending] = useState(false);
+
+    const [loading, setLoading] = useState<boolean>(false);
+
     const [currentPage, setCurrentPage] = useState(pagination.current_page);
     const [searchQuery, setSearchQuery] = useState(search || "");
     const [rowsPerPage, setRowsPerPage] = useState(pagination.per_page);
-    // const [startDate, setStartDate] = useState(format(new Date(start_date), "yyyy-MM-dd"));
-    // const [endDate, setEndDate] = useState(format(new Date(end_date), "yyyy-MM-dd"));
-    const [categoryFilter, setCategoryFilter] = useState(category || "");
 
+    const [categoryFilter, setCategoryFilter] = useState(category || "");
+    const [file, setFile] = useState<File | null>(null);
     const onPageChange = (page: number) => {
         router.get(
             route("master.products.index"),
@@ -86,38 +96,6 @@ export default function Index({
             }
         );
     };
-
-    // const onStartDateChange = (date: Date | null) => {
-    //     if (date) {
-    //         const formattedDate = format(date, "yyyy-MM-dd");
-    //         setStartDate(formattedDate);
-    //         router.get(
-    //             route("master.products.index"),
-    //             { search: searchQuery, page: 1, start_date: formattedDate, end_date: endDate, category: categoryFilter },
-    //             {
-    //                 preserveState: true,
-    //                 onStart:() => setPending(true),
-    //                 onFinish:() => setPending(false)
-    //             }
-    //         );
-    //     }
-    // };
-
-    // const onEndDateChange = (date: Date | null) => {
-    //     if (date) {
-    //         const formattedDate = format(date, "yyyy-MM-dd");
-    //         setEndDate(formattedDate);
-    //         router.get(
-    //             route("master.products.index"),
-    //             { search: searchQuery, page: 1, start_date: startDate, end_date: formattedDate, category: categoryFilter },
-    //             {
-    //                 preserveState: true,
-    //                 onStart:() => setPending(true),
-    //                 onFinish:() => setPending(false)
-    //             }
-    //         );
-    //     }
-    // };
 
     const onCategoryChange = (event: ChangeEvent<HTMLSelectElement>) => {
         setCategoryFilter(event.target.value);
@@ -325,7 +303,16 @@ export default function Index({
     ];
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
+        setPending(true);
+        setFile(e.target.files?.[0] || null);
+
+        setTimeout(() => {
+            setPending(false);
+        }, 500);
+    };
+
+
+    const handleUploadFile = () => {
         if (file) {
             Swal.fire({
                 buttonsStyling: false,
@@ -351,9 +338,7 @@ export default function Index({
                                 },
                             }
                         );
-
-                        e.target.value = "";
-                        return res.data.message;
+                        return res.data;
                     } catch (error) {
                         Swal.showValidationMessage(`
                             Request failed: ${error}
@@ -361,15 +346,26 @@ export default function Index({
                     }
                 },
             }).then((result) => {
-                if (result.isConfirmed) {
+                if (result.isConfirmed && result.value) {
+                    const { message, failures } = result.value;
+
+                    let failureMessages = '';
+                    if (failures && failures.length > 0) {
+                        failureMessages = '<br><br><strong>Failed Imports:</strong><br>';
+                        failures.forEach((failure: Failure) => {
+                            failureMessages += `Row ${failure.row}: ${failure.errors.join(', ')}<br>`;
+                        });
+                    }
+
                     Swal.fire({
                         buttonsStyling: false,
                         customClass: classCustomSwal,
-                        icon: "question",
-                        title: `${result.value}`,
+                        icon: failures && failures.length > 0 ? "warning" : "success",
+                        title: message,
+                        html: failures && failures.length > 0 ? failureMessages : '',
                         confirmButtonText: "OK",
-                    }).then((result) => {
-                        if (result.isConfirmed) {
+                    }).then((ok) => {
+                        if (ok.isConfirmed) {
                             setPending(true);
                             window.location.reload();
                         }
@@ -456,6 +452,20 @@ export default function Index({
                             id="file-upload"
                             onChange={handleFileChange}
                         />
+                    </div>
+                    <div>
+                        <div className="mb-2 block">
+                            <Label
+                                htmlFor="button-upload"
+                                value="Action"
+                            />
+                        </div>
+                        <Button
+                            id="file-upload"
+                            // onChange={handleUploadFile}
+                            disabled={pending}
+                            onClick={handleUploadFile}
+                        >Import</Button>
                     </div>
                 </div>
                 <div className="flex justify-between items-center mt-4">

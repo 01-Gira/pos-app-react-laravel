@@ -158,6 +158,10 @@ class ClaimCustomerController extends Controller
                 $transaction->ppn = $new_ppn;
                 $transaction->total_payment = $new_total_payment;
                 $transaction->save();
+
+                Product::where('id', $validated['product_id'])->update([
+                    'stock' => \DB::raw('stock + ' . $validated['quantity'])
+                ]);
             }
 
             DB::connection('pgsql')->commit();

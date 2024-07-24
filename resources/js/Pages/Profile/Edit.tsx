@@ -26,10 +26,10 @@ export default function Edit({ title, auth, mustVerifyEmail, status, flash }: Pa
                     <UpdatePasswordForm className="max-w-xl" />
                 </div>
 
-                <div className='p-7 border border-gray-200 dark:border-gray-700 shadow-lg rounded-lg'>
+                {/* <div className='p-7 border border-gray-200 dark:border-gray-700 shadow-lg rounded-lg'>
                     <DeleteUserForm className="max-w-xl" />
 
-                </div>
+                </div> */}
             </div>
 
             {/* <div className="py-12">

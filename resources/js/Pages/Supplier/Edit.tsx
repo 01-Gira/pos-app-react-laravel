@@ -14,7 +14,6 @@ import InputError from "@/Components/InputError";
 
 export default function Edit({ title, auth, flash, supplier }: PageProps) {
     const { data, setData, put, processing, errors } = useForm({
-        uniq_code: supplier.uniq_code,
         supplier_name: supplier.supplier_name,
         phone_no: supplier.phone_no,
         address: supplier.address,
@@ -39,18 +38,6 @@ export default function Edit({ title, auth, flash, supplier }: PageProps) {
             <div className="p-7 border border-gray-200 dark:border-gray-700 shadow-lg rounded-lg">
                 <h1 className="dark:text-white text-lg">{title}</h1>
                 <form onSubmit={handleSubmit} className="mt-5">
-                    <div className="mt-5">
-                        <Label htmlFor="uniq_code" value="Unique Code" />
-                        <TextInput
-                            id="uniq_code"
-                            value={supplier.uniq_code}
-                            disabled
-                        />
-                        <InputError
-                            message={errors.uniq_code}
-                            className="mt-2"
-                        />
-                    </div>
                     <div className="mt-5">
                         <Label htmlFor="supplier_name" value="Supplier Name" />
                         <TextInput

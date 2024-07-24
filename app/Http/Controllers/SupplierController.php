@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use App\Imports\SuppliersImport;
 use Maatwebsite\Excel\Facades\Excel;
+use Illuminate\Support\Str;
 
 class SupplierController extends Controller
 {
@@ -29,8 +30,11 @@ class SupplierController extends Controller
 
         $suppliers = Supplier::query()
             ->when($search, function ($query, $search) {
-                return $query->where('supplier_name', 'like', "%{$search}%")
-                             ->orWhere('uniq_code', 'like', "%{$search}%");
+                $search = strtolower($search);
+                return $query->whereRaw('LOWER(supplier_name) LIKE ?', ["%{$search}%"])
+                             ->orWhereRaw('LOWER(uniq_code) LIKE ?', ["%{$search}%"])
+                             ->orWhereRaw('LOWER(CAST(phone_no AS TEXT)) LIKE ?', ["%{$search}%"])
+                             ->orWhereRaw('LOWER(address) LIKE ?', ["%{$search}%"]);
             })
             ->when($startDate, function ($query, $startDate) {
                 return $query->whereDate('created_at', '>=', $startDate);
@@ -91,17 +95,21 @@ class SupplierController extends Controller
 
             DB::connection('pgsql')->beginTransaction();
 
+            // Simpan nilai asli
+            $originalSupplierName = $request->input('supplier_name');
+
+            // Ubah nilai menjadi huruf kecil untuk validasi
+            $request->merge(['supplier_name' => Str::lower($originalSupplierName)]);
+
             $validated = $request->validate([
-                'uniq_code' => 'required|string|max:225',
-                'phone_no' => 'required|min:12|max:14',
-                'supplier_name' => 'required|max:255',
+                'supplier_name' => 'required|max:255|unique:suppliers,supplier_name',
+                'phone_no' => 'required|min:10|max:14',
                 'address' => 'required|max:255'
             ]);
 
-            Supplier::updateOrCreate(
-                ['uniq_code' => $validated['uniq_code']],
-                $validated
-            );
+            $validated['supplier_name'] = $originalSupplierName;
+
+            Supplier::create($validated);
 
             DB::connection('pgsql')->commit();
 
@@ -155,10 +163,18 @@ class SupplierController extends Controller
 
             DB::connection('pgsql')->beginTransaction();
 
+            // Simpan nilai asli
+            $originalSupplierName = $request->input('supplier_name');
+
+            // Ubah nilai menjadi huruf kecil untuk validasi
+            $request->merge(['supplier_name' => Str::lower($originalSupplierName)]);
+
             $validated = $request->validate([
-                'supplier_name' => 'required|max:255',
+                'supplier_name' => 'required|max:255|unique:suppliers,supplier_name,' . $supplier->id,
                 'address' => 'required|max:255'
             ]);
+
+            $validated['supplier_name'] = $originalSupplierName;
 
             $supplier->update($validated);
 
@@ -228,13 +244,29 @@ class SupplierController extends Controller
 
            $file = $validated['file'];
 
-           Excel::import(new SuppliersImport, $file);
+           $import = new SuppliersImport();
+            $import->import($file);
+
+            $failures = $import->failures();
+            $failureMessages = [];
+
+            foreach ($failures as $failure) {
+                $failureMessages[] = [
+                    'row' => $failure->row(),
+                    'attribute' => $failure->attribute(),
+                    'errors' => $failure->errors(),
+                    'values' => $failure->values()
+                ];
+            }
+
+        //    Excel::import(new SuppliersImport, $file);
 
            DB::connection('pgsql')->commit();
 
            return response()->json([
                'indctr' => 1,
-               'message' => 'Succesfully import data suppliers'
+               'message' => 'Succesfully import data suppliers',
+               'failures' => $failureMessages
            ]);
 
        } catch (\Throwable $th) {

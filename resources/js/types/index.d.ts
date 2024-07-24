@@ -196,6 +196,13 @@ export interface ClaimSupplier {
     updated_at: Date;
 }
 
+export interface Failure {
+    row: number;
+    attribute: string;
+    errors: string[];
+    values: Record<string, any>;
+}
+
 export type PageProps<
     T extends Record<string, unknown> = Record<string, unknown>
 > = T & {

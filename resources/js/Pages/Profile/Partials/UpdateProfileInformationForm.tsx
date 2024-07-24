@@ -79,33 +79,35 @@ export default function UpdateProfileInformation({
                 </div>
 
                 <div>
-                    <InputLabel htmlFor="address" value="Address" />
-
-                    <TextInput
-                        id="address"
-                        type="text"
-                        className="mt-1 block w-full"
-                        value={data.address}
-                        onChange={(e) => setData("address", e.target.value)}
-                        required
-                    />
-
-                    <InputError className="mt-2" message={errors.address} />
-                </div>
-
-                <div>
                     <InputLabel htmlFor="phone_no" value="Phone Number" />
 
-                    <Textarea
+                    <TextInput
                         id="phone_no"
+                        type="text"
                         className="mt-1 block w-full"
                         value={data.phone_no}
                         onChange={(e) => setData("phone_no", e.target.value)}
                         required
-                    ></Textarea>
+                    />
 
                     <InputError className="mt-2" message={errors.phone_no} />
                 </div>
+
+                <div>
+                    <InputLabel htmlFor="address" value="Address" />
+
+                    <Textarea
+                        id="address"
+                        className="mt-1 block w-full"
+                        value={data.address}
+                        onChange={(e) => setData("address", e.target.value)}
+                        required
+                    ></Textarea>
+
+                    <InputError className="mt-2" message={errors.address} />
+                </div>
+
+
 
                 {mustVerifyEmail && user.email_verified_at === null && (
                     <div>

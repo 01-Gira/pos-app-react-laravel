@@ -16,7 +16,7 @@ use Illuminate\Support\Facades\Storage;
 use App\Imports\CategoryImport;
 use App\Exports\CategoriesExport;
 use Maatwebsite\Excel\Facades\Excel;
-
+use Illuminate\Support\Str;
 
 class CategoryController extends Controller
 {
@@ -34,7 +34,8 @@ class CategoryController extends Controller
 
         $categories = Category::query()
             ->when($search, function ($query, $search) {
-                return $query->where('category_name', 'like', "%{$search}%");
+                $search = strtolower($search);
+                return $query->whereRaw('LOWER(category_name) LIKE ?', ["%{$search}%"]);
             })
             ->when($startDate, function ($query, $startDate) {
                 return $query->whereDate('created_at', '>=', $startDate);
@@ -79,13 +80,25 @@ class CategoryController extends Controller
 
             DB::connection('pgsql')->beginTransaction();
 
+            // Simpan nilai asli
+            $originalCategoryName = $request->input('category_name');
+
+            // Ubah nilai menjadi huruf kecil untuk validasi
+            $request->merge(['category_name' => Str::lower($originalCategoryName)]);
+
+            // Validasi permintaan
             $validated = $request->validate([
-                'category_name' => 'required|string|max:255',
+                'category_name' => 'required|string|max:255|unique:categories,category_name',
             ]);
-            // dd($request->all());
+
+            // Kembalikan nilai asli setelah validasi berhasil
+            $validated['category_name'] = $originalCategoryName;
+
+            // Buat kategori dengan nilai asli
             $category = Category::create([
                 'category_name' => $validated['category_name'],
             ]);
+
 
             DB::connection('pgsql')->commit();
 
@@ -133,9 +146,18 @@ class CategoryController extends Controller
 
             DB::connection('pgsql')->beginTransaction();
 
+            $originalCategoryName = $request->input('category_name');
+
+            // Ubah nilai menjadi huruf kecil untuk validasi
+            $request->merge(['category_name' => Str::lower($originalCategoryName)]);
+
+            // Validasi permintaan
             $validated = $request->validate([
-                'category_name' => 'required|string|max:255',
+                'category_name' => 'required|string|max:255|unique:categories,category_name,' . $category->id,
             ]);
+
+            // Kembalikan nilai asli setelah validasi berhasil
+            $validated['category_name'] = $originalCategoryName;
 
             $category->update([
                 'category_name' => $validated['category_name']
@@ -206,13 +228,31 @@ class CategoryController extends Controller
 
             $file = $validated['file'];
 
-            Excel::import(new CategoryImport, $file);
+            $import = new CategoryImport();
+            $import->import($file);
+
+
+            $failures = $import->failures();
+            $failureMessages = [];
+
+
+            foreach ($failures as $failure) {
+                $failureMessages[] = [
+                    'row' => $failure->row(),
+                    'attribute' => $failure->attribute(),
+                    'errors' => $failure->errors(),
+                    'values' => $failure->values()
+                ];
+            }
+
+            // Excel::import(new CategoryImport, $file);
 
             DB::connection('pgsql')->commit();
 
             return response()->json([
                 'indctr' => 1,
-                'message' => 'Succesfully import data categories'
+                'message' => 'Succesfully import data categories',
+                'failures' => $failureMessages
             ]);
 
         } catch (\Throwable $th) {

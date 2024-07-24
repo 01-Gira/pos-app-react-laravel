@@ -17,7 +17,7 @@ class ProductsExport implements FromCollection, WithHeadings, WithChunkReading, 
     */
     public function collection()
     {
-        return Product::select('barcode', 'product_name', 'category_id', 'stock', 'price')->get();
+        return Product::select('barcode', 'product_name', 'category_id', 'stock', 'type', 'price')->get();
     }
 
     public function headings(): array
@@ -27,6 +27,7 @@ class ProductsExport implements FromCollection, WithHeadings, WithChunkReading, 
             'Product Name',
             'Category ID',
             'Stock',
+            'Type',
             'Price',
         ];
     }

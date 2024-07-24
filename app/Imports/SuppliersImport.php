@@ -8,9 +8,18 @@ use Maatwebsite\Excel\Concerns\WithHeadingRow;
 use Maatwebsite\Excel\Concerns\WithBatchInserts;
 use Maatwebsite\Excel\Concerns\WithValidation;
 use Maatwebsite\Excel\Concerns\SkipsEmptyRows;
+use Maatwebsite\Excel\Concerns\SkipsFailures;
+use Maatwebsite\Excel\Concerns\SkipsOnFailure;
+use Maatwebsite\Excel\Concerns\Importable;
+use Illuminate\Support\Str;
 
-class SuppliersImport implements ToModel, WithHeadingRow, SkipsEmptyRows, WithValidation
+
+class SuppliersImport implements ToModel, WithHeadingRow, WithValidation, SkipsEmptyRows, SkipsOnFailure
 {
+    use Importable, SkipsFailures;
+
+    private $originalRow;
+
     /**
     * @param array $row
     *
@@ -19,8 +28,7 @@ class SuppliersImport implements ToModel, WithHeadingRow, SkipsEmptyRows, WithVa
     public function model(array $row)
     {
         return new Supplier([
-            'uniq_code' => $row['uniq_code'],
-            'supplier_name' => $row['name'],
+            'supplier_name' => $this->originalRow['supplier_name'],
             'address' => $row['address'],
             'phone_no' => $row['phone']
         ]);
@@ -29,10 +37,28 @@ class SuppliersImport implements ToModel, WithHeadingRow, SkipsEmptyRows, WithVa
     public function rules(): array
     {
         return [
-            'uniq_code' => 'required|string|unique:'.Supplier::class,
-            'name' => 'required|string|max:225',
-            'address' => 'required|string|max:255',
+            'supplier_name' => 'required|string|max:225|unique:'.Supplier::class,
+            'address' => 'required|max:255',
             'phone' => 'required|numeric|min:11'
+        ];
+    }
+
+    public function prepareForValidation(array $data)
+    {
+        $this->originalRow = $data; // Simpan nilai asli
+        $data['supplier_name'] = Str::lower($data['supplier_name']);
+        return $data;
+    }
+
+
+    public function customValidationMessages()
+    {
+        return [
+            'supplier_name.required' => 'Name is required',
+            'supplier_name.unique' => 'Name is already exist',
+            'phone.required' => 'Phone is required',
+            'phone.numeric' => 'Phone must be a number',
+            'address.required' => 'Address is required'
         ];
     }
 }

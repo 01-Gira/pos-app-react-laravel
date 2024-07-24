@@ -1,6 +1,6 @@
 import InputError from "@/Components/InputError";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
-import { Category, PageProps } from "@/types";
+import { Category, Failure, PageProps } from "@/types";
 import { Head, router, useForm, usePage } from "@inertiajs/react";
 import { Button, Datepicker, FileInput, FloatingLabel, Label, Modal, Select, TextInput } from "flowbite-react";
 import { ChangeEvent, useEffect, useRef, useState } from "react";
@@ -35,6 +35,8 @@ export default function Index({
     const [editingCategory, setEditingCategory] = useState<Category | null>(
         null
     );
+
+    const [file, setFile] = useState<File | null>(null);
 
     useEffect(() => {
         setCurrentPage(pagination.current_page);
@@ -247,7 +249,15 @@ export default function Index({
     ];
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
+        setPending(true);
+        setFile(e.target.files?.[0] || null);
+
+        setTimeout(() => {
+            setPending(false);
+        }, 500);
+    };
+
+    const handleFileUpload = () => {
         if (file) {
             Swal.fire({
                 buttonsStyling: false,
@@ -270,8 +280,7 @@ export default function Index({
                             }
                         })
 
-                        e.target.value = '';
-                        return res.data.message;
+                        return res.data;
                     } catch (error) {
                         Swal.showValidationMessage(`
                             Request failed: ${error}
@@ -280,12 +289,30 @@ export default function Index({
                     }
                 }
             }).then((result) => {
-                if (result.isConfirmed) {
-                    Swal.fire({
-                        title: `${result.value}`
-                      });
-                    window.location.reload();
+                if (result.isConfirmed && result.value) {
+                    const { message, failures } = result.value;
 
+                    let failureMessages = '';
+                    if (failures && failures.length > 0) {
+                        failureMessages = '<br><br><strong>Failed Imports:</strong><br>';
+                        failures.forEach((failure: Failure) => {
+                            failureMessages += `Row ${failure.row}: ${failure.errors.join(', ')}<br>`;
+                        });
+                    }
+
+                    Swal.fire({
+                        buttonsStyling: false,
+                        customClass: classCustomSwal,
+                        icon: failures && failures.length > 0 ? "warning" : "success",
+                        title: message,
+                        html: failures && failures.length > 0 ? failureMessages : '',
+                        confirmButtonText: "OK",
+                    }).then((ok) => {
+                        if (ok.isConfirmed) {
+                            setPending(true);
+                            window.location.reload();
+                        }
+                    });
                 }
             });
         }
@@ -336,11 +363,31 @@ export default function Index({
                                 Add Data
                             </Button>
                         </div>
+                        <div>
+                            <div className="mb-2 block">
+                                <Label
+                                    htmlFor="file-upload"
+                                    value="Import Data From Excel"
+                                />
+                            </div>
+                            <FileInput
+                                id="file-upload"
+                                onChange={handleFileChange}
+                            />
+                        </div>
                     <div>
-                    <div className="mb-2 block">
-                        <Label htmlFor="file-upload" value="Import Data" />
-                    </div>
-                        <FileInput id="file-upload" onChange={handleFileChange} />
+                        <div className="mb-2 block">
+                            <Label
+                                htmlFor="button-upload"
+                                value="Action"
+                            />
+                        </div>
+                        <Button
+                            id="file-upload"
+                            // onChange={handleUploadFile}
+                            disabled={pending}
+                            onClick={handleFileUpload}
+                        >Import</Button>
                     </div>
                 </div>
 

@@ -1,5 +1,5 @@
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
-import { PageProps, Product, Supplier } from "@/types";
+import { Failure, PageProps, Product, Supplier } from "@/types";
 import { Head, router, useForm } from "@inertiajs/react";
 import {
     Button,
@@ -42,6 +42,9 @@ export default function Index({
     const [endDate, setEndDate] = useState(
         format(new Date(end_date), "yyyy-MM-dd")
     );
+
+    const [file, setFile] = useState<File | null>(null);
+
 
     useEffect(() => {
         setCurrentPage(pagination.current_page);
@@ -150,6 +153,11 @@ export default function Index({
             sortable: true,
         },
         {
+            name: "Phone No",
+            selector: (row: Supplier) => row.phone_no,
+            sortable: true,
+        },
+        {
             name: "Address",
             selector: (row: Supplier) => row.address,
             sortable: true,
@@ -188,7 +196,17 @@ export default function Index({
     ];
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
+        setPending(true);
+        setFile(e.target.files?.[0] || null);
+
+        setTimeout(() => {
+            setPending(false);
+        }, 500);
+    };
+
+
+    const handleUploadFile = () => {
+
         if (file) {
             Swal.fire({
                 buttonsStyling: false,
@@ -214,9 +232,7 @@ export default function Index({
                                 },
                             }
                         );
-
-                        e.target.value = "";
-                        return res.data.message;
+                        return res.data;
                     } catch (error) {
                         Swal.showValidationMessage(`
                             Request failed: ${error}
@@ -224,12 +240,26 @@ export default function Index({
                     }
                 },
             }).then((result) => {
-                if (result.isConfirmed) {
+                if (result.isConfirmed && result.value) {
+                    const { message, failures } = result.value;
+
+                    let failureMessages = '';
+                    if (failures && failures.length > 0) {
+                        failureMessages = '<br><br><strong>Failed Imports:</strong><br>';
+                        failures.forEach((failure: Failure) => {
+                            failureMessages += `Row ${failure.row}: ${failure.errors.join(', ')}<br>`;
+                        });
+                    }
+
                     Swal.fire({
-                        title: `${result.value}`,
+                        buttonsStyling: false,
+                        customClass: classCustomSwal,
+                        icon: failures && failures.length > 0 ? "warning" : "success",
+                        title: message,
+                        html: failures && failures.length > 0 ? failureMessages : '',
                         confirmButtonText: "OK",
-                    }).then((result) => {
-                        if (result.isConfirmed) {
+                    }).then((ok) => {
+                        if (ok.isConfirmed) {
                             setPending(true);
                             window.location.reload();
                         }
@@ -290,12 +320,29 @@ export default function Index({
                     </div>
                     <div>
                         <div className="mb-2 block">
-                            <Label htmlFor="file-upload" value="Import Data" />
+                            <Label
+                                htmlFor="file-upload"
+                                value="Import Data From Excel"
+                            />
                         </div>
                         <FileInput
                             id="file-upload"
                             onChange={handleFileChange}
                         />
+                    </div>
+                    <div>
+                        <div className="mb-2 block">
+                            <Label
+                                htmlFor="button-upload"
+                                value="Action"
+                            />
+                        </div>
+                        <Button
+                            id="file-upload"
+                            // onChange={handleUploadFile}
+                            disabled={pending}
+                            onClick={handleUploadFile}
+                        >Import</Button>
                     </div>
                 </div>
 

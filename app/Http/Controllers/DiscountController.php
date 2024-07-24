@@ -29,11 +29,12 @@ class DiscountController extends Controller
 
         $discounts = Discount::query()
             ->when($search, function ($query, $search) {
+                $search = strtolower($search);
                 return $query->whereHas('product', function ($query) use ($search) {
-                    $query->where('product_name', 'like', "%{$search}%")
-                          ->orWhere('barcode', 'like', "%{$search}%")
-                          ->orWhere('discount', 'like', "%{$search}%");
-                });
+                    return $query->whereRaw('LOWER(product_name) LIKE ?', ["%{$search}%"])
+                        ->orWhereRaw('LOWER(barcode) LIKE ?', ["%{$search}%"]);
+                })
+                ->orWhereRaw('LOWER(CAST(discount AS TEXT)) LIKE ?', ["%{$search}%"]);
             })
             ->when($startDate, function ($query, $startDate) {
                 return $query->whereDate('created_at', '>=', $startDate);

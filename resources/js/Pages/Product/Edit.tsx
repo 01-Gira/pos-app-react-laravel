@@ -26,6 +26,7 @@ export default function Edit({
         barcode: product.barcode,
         product_name: product.product_name,
         stock: product.stock,
+        type: product.type,
         price: product.price,
         category_id: product.category_id,
         picture: null as File | null,
@@ -154,7 +155,32 @@ export default function Edit({
                         </div>
                     </div>
 
-                    <div className="mt-5">
+                    <div className="grid grid-cols-1 gap-4 mt-5">
+                        <div>
+                            <Label
+                                htmlFor="type"
+                                value="Select your category"
+                            />
+                            <Select
+                                id="type"
+                                value={data.type}
+                                onChange={(e) =>
+                                    setData("type", e.target.value)
+                                }
+                                required
+                            >
+                                <option value="">Select</option>
+                                <option value="pcs">Pcs</option>
+                                <option value="pack">pack</option>
+                            </Select>
+                            <InputError
+                                message={errors.type}
+                                className="mt-2"
+                            />
+                        </div>
+                    </div>
+
+                    {/* <div className="mt-5">
                         <Label htmlFor="picture" value="Upload Picture" />
                         <FileInput
                             id="picture"
@@ -172,7 +198,7 @@ export default function Edit({
                                 />
                             </div>
                         )}
-                    </div>
+                    </div> */}
 
                     <div className="flex space-x-4 mt-5">
                         <Button

@@ -243,6 +243,7 @@ class ProductController extends Controller
                 'product_name' => 'required|string|max:225',
                 'category_id' => 'required|uuid',
                 'price' => 'required|numeric',
+                'type' => 'required|string',
                 'picture' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
             ]);
 
@@ -346,7 +347,7 @@ class ProductController extends Controller
                 'type_message' => 'success',
                 'message' => 'Successfully add discount to product'
             ]);
-            
+
         } catch (\Throwable $th) {
             DB::connection('pgsql')->rollback();
 
@@ -375,13 +376,29 @@ class ProductController extends Controller
 
             $file = $validated['file'];
 
-            Excel::import(new ProductsImport, $file);
+            $import = new ProductsImport();
+            $import->import($file);
+
+            $failures = $import->failures();
+            $failureMessages = [];
+
+            foreach ($failures as $failure) {
+                $failureMessages[] = [
+                    'row' => $failure->row(),
+                    'attribute' => $failure->attribute(),
+                    'errors' => $failure->errors(),
+                    'values' => $failure->values()
+                ];
+            }
+
+            // Excel::import(new ProductsImport, $file);
 
             DB::connection('pgsql')->commit();
 
             return response()->json([
                 'indctr' => 1,
-                'message' => 'Succesfully import data products'
+                'message' => 'Succesfully import data products',
+                'failures' => $failureMessages
             ]);
 
         } catch (\Throwable $th) {

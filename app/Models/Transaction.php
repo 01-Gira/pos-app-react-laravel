@@ -21,8 +21,10 @@ class Transaction extends Model
     {
         return $query
         ->when(isset($filters['search']), function ($query) use ($filters) {
-            return $query->where('id', 'like', "%{$filters['search']}%")
-                ->orWhere('status', 'like', "%{$filters['search']}%");
+            $search = strtolower($filters['search']);
+            return $query->whereRaw('LOWER(id) LIKE ?', ["%{$search}%"])
+                ->orwhereRaw('LOWER(status) LIKE ?', ["%{$search}%"])
+                ->orwhereRaw('LOWER(payment_method) LIKE ?', ["%{$search}%"]);
         })
         ->when(isset($filters['start_date']), function ($query) use ($filters) {
             return $query->whereDate('transaction_date', '>=', $filters['start_date']);

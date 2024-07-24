@@ -37,8 +37,9 @@ class Product extends Model
     {
         return $query
         ->when(isset($filters['search']), function ($query) use ($filters) {
-            return $query->where('product_name', 'like', "%{$filters['search']}%")
-                ->orWhere('barcode', 'like', "%{$filters['search']}%");
+            $search = strtolower($filters['search']);
+            return $query->whereRaw('LOWER(product_name) LIKE ?', ["%{$search}%"])
+                ->orWhereRaw('LOWER(barcode) LIKE ?', ["%{$search}%"]);
         })
         ->when($filters['category'], function ($query, $category) {
             return $query->where('category_id', $category);

@@ -13,8 +13,11 @@ import {
     HiArchive,
 } from "react-icons/hi";
 import { twMerge } from "tailwind-merge";
-import { usePage } from "@inertiajs/react";
+import { router, usePage } from "@inertiajs/react";
 import { User } from "@/types";
+import withReactContent from "sweetalert2-react-content";
+import Swal from "sweetalert2";
+import axios from "axios";
 
 interface SidebarLayoutProps {
     user: User;
@@ -30,6 +33,50 @@ export default function SidebarLayout({
     const { url } = usePage(); // Menggunakan usePage untuk mendapatkan informasi route saat ini
     const [transactionOpen, setTransactionOpen] = useState(false); // State untuk mengontrol collapse Transaction
     const [masterOpen, setMasterOpen] = useState(false); // State untuk mengontrol collapse Master
+
+    const viewReportTransaction = async (id : string) => {
+        withReactContent(Swal).fire({
+            title: <i>Enter password to access this page</i>,
+            input: 'password',
+            showCancelButton: true,
+            showConfirmButton: true,
+            showLoaderOnConfirm: true,
+            preConfirm: async () => {
+              const input = Swal.getInput()?.value;
+              console.log();
+              if(input == ''){
+                Swal.fire({
+                    icon: "warning",
+                    title: `Input can not be empty`,
+                    confirmButtonText: 'OK'
+                });
+              }else{
+                try {
+                    const res = await axios.get(route('check-password'), { params : {
+                        password: input
+                    }});
+
+                    if(res.data.indctr === 1){
+                        router.get(route("report.transactions.index"));
+                    }else{
+                        Swal.fire({
+                            icon: "warning",
+                            title: res.data.message,
+                            confirmButtonText: 'OK'
+                        });
+                    }
+                } catch (error : any) {
+                    Swal.fire({
+                        icon: "warning",
+                        title: error.message,
+                        confirmButtonText: 'OK'
+                    });
+                }
+
+              }
+            },
+          })
+    }
 
     return (
         <div
@@ -199,7 +246,8 @@ export default function SidebarLayout({
                                         ? "bg-gray-300 text-black"
                                         : ""
                                 }
-                                href={route("report.transactions.index")}
+                                onClick={viewReportTransaction}
+                                // href={route("report.transactions.index")}
                             >
                                 Transactions
                             </Sidebar.Item>

@@ -133,6 +133,7 @@ export default function Transactions({
             start_date: startDate,
             end_date: endDate,
             status: statusFilter,
+            payment_method: paymentMethodFilter,
         });
     };
 
@@ -144,6 +145,7 @@ export default function Transactions({
             start_date: startDate,
             end_date: endDate,
             status: statusFilter,
+            payment_method: paymentMethodFilter,
         });
     };
 
@@ -159,6 +161,7 @@ export default function Transactions({
             start_date: startDate,
             end_date: endDate,
             status: statusFilter,
+            payment_method: paymentMethodFilter,
         });
     };
 
@@ -174,6 +177,7 @@ export default function Transactions({
             start_date: startDate,
             end_date: endDate,
             status: statusFilter,
+            payment_method: paymentMethodFilter,
         });
     };
 
@@ -187,6 +191,7 @@ export default function Transactions({
             start_date: startDate,
             end_date: endDate,
             status: statusFilter,
+            payment_method: paymentMethodFilter,
         });
     };
 
@@ -199,6 +204,7 @@ export default function Transactions({
             start_date: startDate,
             end_date: endDate,
             status: statusFilter,
+            payment_method: paymentMethodFilter,
         });
     };
 
@@ -213,6 +219,7 @@ export default function Transactions({
             start_date: newDate,
             end_date: endDate,
             status: statusFilter,
+            payment_method: paymentMethodFilter,
         });
 
         fetchDataTransactions({
@@ -221,6 +228,7 @@ export default function Transactions({
             start_date: newDate,
             end_date: endDate,
             status: statusFilter,
+            payment_method: paymentMethodFilter,
         });
     };
 
@@ -235,6 +243,7 @@ export default function Transactions({
             start_date: startDate,
             end_date: newDate,
             status: statusFilter,
+            payment_method: paymentMethodFilter,
         });
 
         fetchDataTransactions({
@@ -243,6 +252,7 @@ export default function Transactions({
             start_date: startDate,
             end_date: newDate,
             status: statusFilter,
+            payment_method: paymentMethodFilter,
         });
     };
 
@@ -255,6 +265,7 @@ export default function Transactions({
             start_date: startDate,
             end_date: endDate,
             status: e.target.value,
+            payment_method: paymentMethodFilter,
         });
 
         fetchDataTransactions({
@@ -263,6 +274,7 @@ export default function Transactions({
             start_date: startDate,
             end_date: endDate,
             status: e.target.value,
+            payment_method: paymentMethodFilter,
         });
     };
 
